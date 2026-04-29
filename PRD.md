@@ -1,0 +1,643 @@
+# PRD: Linkbuilding Management System
+
+## Table of Contents
+
+1. [Project Overview](#1-project-overview)
+2. [Tech Stack](#2-tech-stack)
+3. [Roles & Permissions](#3-roles--permissions)
+4. [Database Schema](#4-database-schema)
+5. [Modules](#5-modules)
+   - [5.1 Authentication](#51-authentication)
+   - [5.2 User Management](#52-user-management)
+   - [5.3 Profile](#53-profile)
+   - [5.4 Sites](#54-sites)
+   - [5.5 Client Orders](#55-client-orders)
+   - [5.6 Order Management](#56-order-management)
+   - [5.7 Copywriting](#57-copywriting)
+   - [5.8 Invoices](#58-invoices)
+   - [5.9 Earnings](#59-earnings)
+   - [5.10 Chat](#510-chat)
+6. [UI/UX Guidelines](#6-uiux-guidelines)
+7. [Global Business Rules](#7-global-business-rules)
+
+---
+
+## 1. Project Overview
+
+A web-based internal platform that unifies all linkbuilding operations — from site selection and order creation through content writing, publication, and billing. It replaces spreadsheets and messaging tools with a single structured, role-based workflow.
+
+**Core goals:**
+- Reduce manual operations and eliminate process chaos
+- Enable client self-service
+- Reduce manager dependency through structured workflows
+- Support scalable growth without proportional hiring
+
+---
+
+## 2. Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Next.js (App Router) |
+| Database & Auth | Supabase (PostgreSQL + Supabase Auth) |
+| UI Components | shadcn/ui |
+| Styling | Tailwind CSS (via shadcn/ui) |
+
+### Key conventions
+
+- Use **Supabase Auth** for all authentication flows (sessions, tokens, password reset, invite emails).
+- Use **Supabase Row Level Security (RLS)** to enforce per-role data access at the database level — do not rely solely on frontend route guards.
+- All server-side data fetching and mutations go through **Next.js Server Actions** or **Route Handlers**.
+- Use **shadcn/ui** components as the base for all UI elements. Do not build custom primitives when a shadcn/ui component exists.
+
+---
+
+## 3. Roles & Permissions
+
+Five roles exist in the system. Each role sees a different dashboard and has access to different modules.
+
+| Role | Description |
+|---|---|
+| `client` | Places orders, approves content, views invoices |
+| `manager` | Coordinates orders, assigns copywriters, manages publication |
+| `copywriter` | Writes and submits content for assigned orders |
+| `sourcer` | Adds websites to the site catalog, earns commission |
+| `admin` | Full system access: approves sites, manages users and finances |
+
+---
+
+## 4. Database Schema
+
+> High-level entities and relationships. Implement as Supabase (PostgreSQL) tables with RLS policies per role.
+
+### Entities
+
+**users**
+- Extends Supabase `auth.users`
+- Fields: `id`, `email`, `role` (enum), `status` (enum: `pending` | `active` | `disabled`), `first_name`, `last_name`, `manager_id` → users (nullable, only relevant for `client` role), `created_at`
+- `manager_id` points to the manager assigned to this client. Null for all non-client roles.
+
+**sites**
+- Fields: `id`, `url`, `sourcer_id` → users, `status` (enum: `pending` | `active` | `archived`), `created_at`, `updated_at`
+- A site is always owned by one sourcer. When a sourcer is disabled, `sourcer_id` is set to `null`.
+
+**cart_items**
+- Fields: `id`, `client_id` → users, `site_id` → sites, `created_at`
+- Temporary holding area before order creation. Deleted when orders are created.
+
+**orders**
+- Fields: `id`, `client_id` → users, `site_id` → sites, `copywriter_id` → users (nullable), `sourcer_id` → users (derived from site at order time), `status` (enum — see below), `publish_month`, `content` (text, nullable), `published_url` (nullable), `created_at`, `updated_at`
+- Order status enum: `new` | `in_progress` | `content_sent` | `needs_changes` | `content_approved` | `published` | `completed` | `canceled`
+
+**change_requests**
+- Fields: `id`, `order_id` → orders, `comment` (text), `created_by` → users, `created_at`
+- Created when a client rejects content.
+
+**invoices**
+- Fields: `id`, `client_id` → users, `status` (enum: `draft` | `sent` | `paid`), `billing_period_start`, `billing_period_end`, `created_at`, `updated_at`
+- One invoice per client per billing period. Created automatically by system job.
+
+**invoice_items**
+- Fields: `id`, `invoice_id` → invoices, `order_id` → orders, `amount`
+
+**chats**
+- Fields: `id`, `category` (enum: `support` | `sales` | `general`), `created_at`
+
+**chat_participants**
+- Fields: `id`, `chat_id` → chats, `user_id` → users
+
+**messages**
+- Fields: `id`, `chat_id` → chats, `sender_id` → users, `body` (text), `status` (enum: `unread` | `read`), `created_at`
+
+### Key Relationships
+
+```
+users (manager) ──< users (client, via manager_id)
+users ──< orders >── sites
+orders ──< change_requests
+users ──< invoices ──< invoice_items >── orders
+chats >──< users (via chat_participants)
+chats ──< messages
+```
+
+---
+
+## 5. Modules
+
+---
+
+### 5.1 Authentication
+
+**Screens:** Login, Set Password (first login), Forgot Password, Reset Password
+
+#### 5.1.1 First Login
+
+1. User receives an invitation email with a temporary password.
+2. User enters email + temporary password on the Login screen.
+3. System validates credentials and detects that it is a first login.
+4. System redirects user to the **Set Password** screen.
+5. User enters and confirms a new password, clicks **Save**.
+6. System validates the token, saves the new password, sets user `status` to `active`, and redirects to the role-appropriate dashboard.
+
+#### 5.1.2 Standard Login
+
+1. User enters email and password.
+2. System verifies credentials via Supabase Auth.
+3. On success, redirects to the role-appropriate dashboard.
+4. On failure (user not found, wrong password, or disabled account), display an error message and remain on the Login screen.
+
+> Do not specify whether the user does not exist or the password is incorrect — use a generic error to prevent user enumeration.
+
+#### 5.1.3 Forgot Password
+
+1. User clicks **Forgot password** on the Login screen.
+2. System redirects to the **Forgot Password** screen.
+3. User enters their email and clicks **Send reset link**.
+4. If email exists: system generates a Supabase password reset token and sends the reset email. Display message: *"Check your email for a reset link."*
+5. If email does not exist: display message: *"No account found with that email."*
+6. User can navigate back to Login at any time.
+
+#### 5.1.4 Reset Password
+
+1. User clicks the reset link in the email and is directed to the **Reset Password** screen.
+2. User enters and confirms a new password, clicks **Save**.
+3. System validates the reset token (via Supabase) and updates the password.
+4. System displays a success message with a link to return to Login.
+
+---
+
+### 5.2 User Management
+
+**Screens:** All Users, User Details, Invite User, Resend Invite, Edit User, Confirm Status Change, Reassign Orders
+
+#### Permission Matrix
+
+| Action | manager | admin |
+|---|---|---|
+| View (all roles) | ✅ | ✅ |
+| Invite | `client`, `copywriter`, `sourcer` only | All roles |
+| Resend invite | `client`, `copywriter`, `sourcer` only | All roles |
+| Edit | `client`, `copywriter`, `sourcer` only | All roles |
+| Change status | ❌ | ✅ |
+| Assign manager to client | ❌ | ✅ |
+
+#### 5.2.1 View Users
+
+- Display a paginated list of all users on the **All Users** screen.
+- Clicking a user opens the **User Details** screen.
+
+#### 5.2.2 Filter Users
+
+- Filter by: role, status, name/email search.
+
+#### 5.2.3 Invite User
+
+1. User clicks **Invite User**.
+2. System displays the **Invite User** screen.
+3. User enters email and selects a role, clicks **Send Invite**.
+4. System validates email uniqueness.
+5. On success: creates a user record with `status = pending`, generates an invitation token via Supabase Auth, sends the invitation email.
+6. On duplicate email: display an error.
+
+**Manager auto-assignment rule:** When the inviting user has role `manager` and the invited role is `client`, the system automatically sets `manager_id` on the new client record to the inviting manager's `id`. No manual selection is needed.
+
+**Admin inviting a client:** The invite form shows an additional **Assign Manager** field — a `<Select>` listing all active managers. The admin must select a manager before sending the invite. `manager_id` is set to the selected manager.
+
+#### 5.2.4 Resend Invite
+
+- Only available for users with `status = pending`.
+- Clicking **Resend Invite** shows a confirmation screen.
+- On confirm: resend the invitation email.
+
+#### 5.2.5 Edit User
+
+- Opens the **Edit User** screen with pre-filled form.
+- On save: system updates user data.
+- Editable fields: first name, last name, email (validate uniqueness), role.
+
+#### 5.2.6 Assign Manager to Client
+
+- Available only to `admin`. Shown on the **User Details** screen for any user with `role = client`.
+- Admin clicks **Assign Manager** → `<Select>` listing all active managers, pre-selected with the current `manager_id` if one exists.
+- On save: system updates `manager_id` on the client record.
+- If the client has an existing **Sales Chat**, add the new manager as a participant and remove the old manager if they are no longer assigned to any client in that chat. (Simpler alternative: leave the old manager in the chat and just add the new one.)
+
+#### 5.2.6 Change User Status
+
+**Deactivate — standard (no active orders):**
+1. Click **Disable** → show confirmation dialog.
+2. On confirm: set `status = disabled`.
+
+**Deactivate — copywriter with active orders:**
+1. Click **Disable** → show **Reassign Orders** screen.
+2. User selects a replacement copywriter for each active order.
+3. On save: reassign orders and set `status = disabled`.
+
+**Deactivate — sourcer:**
+1. Click **Disable** → show confirmation dialog.
+2. On confirm: set `status = disabled` and set `sourcer_id = null` on all sites owned by this sourcer.
+
+**Deactivate — current user:**
+- Action is forbidden. Do not show the Disable button for the currently authenticated user.
+
+**Activate:**
+1. Click **Activate** → show confirmation dialog.
+2. On confirm: set `status = active`.
+
+---
+
+### 5.3 Profile
+
+**Screens:** View Profile, Edit Profile, Change Password
+
+**Rule:** Users can only access their own profile.
+
+#### 5.3.1 View Profile
+
+- Displays current user's name, email, role, and status.
+
+#### 5.3.2 Edit Profile
+
+1. Click **Edit**.
+2. System displays the **Edit Profile** form.
+3. User updates fields, clicks **Save**.
+4. System saves changes.
+
+#### 5.3.3 Change Password
+
+1. System displays **Change Password** form (current password, new password, confirm new password).
+2. On submit: validate current password is correct, validate new passwords match.
+3. On success: save new password via Supabase Auth.
+
+---
+
+### 5.4 Sites
+
+**Screens:** All Sites, View Site, Add Site, Edit Site, Archive Site, Unarchive Site
+
+#### Permission Matrix
+
+| Action | sourcer | manager | admin |
+|---|---|---|---|
+| View | Own sites, status ≠ `archived` | All | All |
+| Filter | Own sites, status ≠ `archived` | All | All |
+| Create | ✅ | ❌ | ❌ |
+| Edit | Own sites, status ≠ `archived` | ❌ | ✅ |
+| Archive / Unarchive | ❌ | ❌ | ✅ |
+
+#### 5.4.1 View Sites
+
+- Paginated list of sites based on the user's permission scope.
+- Clicking a site opens the **View Site** screen.
+
+#### 5.4.2 Filter Sites
+
+- Filter by: status, URL search, sourcer (manager/admin only).
+
+#### 5.4.3 Create Site
+
+1. System displays the **Add Site** form.
+2. Sourcer fills in site details and submits.
+3. System validates data, creates the site, assigns `sourcer_id` to the creator, sets `status = pending`.
+
+#### 5.4.4 Edit Site
+
+1. User selects a site and clicks **Edit Site**.
+2. System displays the **Edit Site** form.
+3. User updates fields and clicks **Save**.
+4. System saves data and resets `status = pending`.
+
+> Saving an edit resets the site to `pending` so it goes through admin approval again.
+
+#### 5.4.5 Archive Site
+
+1. Admin clicks **Archive Site** → confirmation screen.
+2. On confirm: set `status = archived`.
+
+#### 5.4.6 Unarchive Site
+
+1. Admin clicks **Unarchive Site** → confirmation screen.
+2. On confirm: set `status = active`.
+
+---
+
+### 5.5 Client Orders
+
+**Screens:** All Sites (client view), Cart, All Orders (client view), Review Content
+
+**Rule:** This module is available only to users with role `client`.
+
+#### 5.5.1 View & Filter Sites
+
+- Client sees the site catalog (active sites only).
+- Filter by available site attributes.
+
+#### 5.5.2 Add Site to Cart
+
+1. Client clicks **Add to Cart** on a site.
+2. System creates a `cart_item` record linking the client to the site.
+
+#### 5.5.3 Create Orders from Cart
+
+1. Client opens the **Cart** screen.
+2. For each cart item, client selects a **publish month**.
+3. Client clicks **Create Order**.
+4. System creates one `order` per cart item with `status = new`.
+5. System deletes all cart items that were converted.
+
+#### 5.5.4 Cancel Order
+
+- Available for orders with `status = new`.
+1. Client clicks **Cancel** → confirmation screen.
+2. On confirm: set `status = canceled`.
+
+#### 5.5.5 Edit Order
+
+- Available for orders with `status = new`.
+1. Client clicks **Edit** → **Edit Order** form.
+2. On save: system updates order data.
+
+#### 5.5.6 Review Content
+
+**Approve:**
+1. Client clicks **Review** on an order with `status = content_sent`.
+2. System displays **Review Content** screen with the submitted content.
+3. Client clicks **Approve**.
+4. System sets `status = content_approved`.
+
+**Request Changes:**
+1. Client clicks **Needs Changes**.
+2. System displays **Leave Comment** form.
+3. Client enters feedback and clicks **Send**.
+4. System creates a `change_request` record, sets `status = needs_changes`.
+
+---
+
+### 5.6 Order Management
+
+**Screens:** All Orders, View Order, Assign Copywriter, Reassign Copywriter, Publish Order
+
+#### Permission Matrix
+
+| Action | manager | admin |
+|---|---|---|
+| View & Filter | ✅ | ✅ |
+| Assign / Reassign Copywriter | ✅ | ✅ |
+| Publish Order | ✅ | ✅ |
+
+#### 5.6.1 View Orders
+
+- Paginated list of all orders.
+- Clicking an order opens the **View Order** screen.
+
+#### 5.6.2 Filter Orders
+
+- Filter by: status, client, copywriter, site, publish month.
+
+#### 5.6.3 Assign Copywriter
+
+- Available when no copywriter is assigned.
+1. User clicks **Assign Copywriter** → **Assign Copywriter** form.
+2. User selects a copywriter and clicks **Save**.
+3. System saves data, sets `status = in_progress`, assigns `copywriter_id`.
+
+#### 5.6.4 Reassign Copywriter
+
+- Available when a copywriter is already assigned.
+1. User clicks **Reassign Copywriter** → form.
+2. User selects a new copywriter and clicks **Save**.
+3. System updates `copywriter_id`. Status remains unchanged.
+
+#### 5.6.5 Publish Order
+
+- Available for orders with `status = content_approved`.
+1. User clicks **Publish** → **Publish Order** form.
+2. User enters the publication URL and clicks **Publish**.
+3. System validates the URL format, saves `published_url`, sets `status = published`.
+
+---
+
+### 5.7 Copywriting
+
+**Screens:** All Orders (copywriter view), Create Content, Edit Content
+
+**Rule:** Available only to users with role `copywriter`. Users see only their assigned orders.
+
+#### 5.7.1 Write Content
+
+- Available for orders with `status = in_progress`.
+1. Copywriter clicks **Create Content** → **Create Content** form.
+2. Copywriter fills in the content and clicks **Save**.
+3. System saves the content (draft, does not change status yet).
+
+#### 5.7.2 Edit Content
+
+- Available for orders with `status = needs_changes`.
+1. Copywriter clicks **Edit Content** → **Edit Content** form with existing content and change request comments visible.
+2. Copywriter updates the content and clicks **Save**.
+3. System saves the updated content.
+
+#### 5.7.3 Submit Content
+
+- Available from the **View Order** screen when content has been saved.
+1. Copywriter clicks **Submit**.
+2. System sets `status = content_sent`.
+
+---
+
+### 5.8 Invoices
+
+**Screens:** All Invoices, View Invoice, Edit Invoice, Confirm Send, Confirm Mark as Paid
+
+#### Permission Matrix
+
+| Action | client | manager | admin | system |
+|---|---|---|---|---|
+| View | Own, status = `sent` or `paid` | All | All | — |
+| Filter | Own, status = `sent` or `paid` | All | All | — |
+| Create | ❌ | ❌ | ❌ | ✅ (auto) |
+| Edit | ❌ | ✅ (`draft` only) | ✅ (`draft` only) | — |
+| Send Invoice | ❌ | ✅ | ✅ | — |
+| Mark as Paid | ❌ | ✅ | ✅ | — |
+| Download PDF | Own, status = `sent` or `paid` | ✅ | ✅ | — |
+
+#### 5.8.1 Automatic Invoice Creation
+
+- A scheduled system job runs monthly.
+- The job finds all orders with `status = published` for each client.
+- For each client, the system creates one invoice for the billing period and sets `status = draft`.
+- Invoice items are created for each qualifying order.
+
+> Note: The actual publication date of an order may fall outside the invoice billing period, because managers can adjust publication dates before sending the invoice to the client.
+
+#### 5.8.2 View Invoices
+
+- Paginated list of invoices within the user's permission scope.
+- Clicking an invoice opens the **View Invoice** screen.
+
+#### 5.8.3 Filter Invoices
+
+- Filter by: status, client (manager/admin), billing period.
+
+#### 5.8.4 Edit Invoice
+
+- Available for invoices with `status = draft`.
+1. User clicks **Edit** → **Edit Invoice** form.
+2. User updates invoice fields (e.g., adjusts publication dates or amounts).
+3. On save: system saves changes.
+
+#### 5.8.5 Send Invoice
+
+1. User clicks **Send Invoice** → confirmation screen.
+2. On confirm: set `status = sent`.
+
+#### 5.8.6 Mark as Paid
+
+1. User clicks **Mark as Paid** → confirmation screen.
+2. On confirm: set invoice `status = paid` and set all associated orders `status = completed`.
+
+#### 5.8.7 Download PDF
+
+1. User clicks **Download**.
+2. System generates a PDF of the invoice and triggers a file download.
+
+---
+
+### 5.9 Earnings
+
+**Screens:** Earnings
+
+#### Permission Matrix
+
+| Action | sourcer | manager | admin |
+|---|---|---|---|
+| View | Own (where `order.sourcer_id = user.id`) | All | All |
+| Filter | Own | All | All |
+
+#### 5.9.1 View Earnings
+
+- Displays a summary of earnings calculated from completed orders linked to the sourcer.
+
+#### 5.9.2 Filter Earnings
+
+- Filter by: date range, site, status.
+
+---
+
+### 5.10 Chat
+
+**Screens:** All Chats, Chat (thread view), Create Chat
+
+#### Permission Matrix
+
+All roles (`client`, `sourcer`, `copywriter`, `manager`, `admin`) can: view, filter, create chats, and send messages.
+
+#### 5.10.1 View Chats
+
+- **All Chats** screen shows chats the user participates in, sorted by most recent message.
+- Clicking a chat opens the **Chat** screen (thread view).
+- When a user reads a message, the system sets `message.status = read`.
+
+#### 5.10.2 Filter Chats
+
+- Filter by: category, participant name, or keyword search.
+
+#### 5.10.3 Create Chat (manual)
+
+1. User clicks **Create Chat** → **Create Chat** form.
+2. User selects participants and a category, clicks **Create**.
+3. System creates the chat and adds selected participants.
+
+#### 5.10.4 Auto-create Support Chat
+
+- Trigger: a new user sets their password for the first time (completes first login).
+- System automatically creates a chat between the new user and all users with role `admin`.
+- Chat `category` is set to `support`.
+
+#### 5.10.5 Auto-create Sales Chat
+
+- Trigger: a client creates their first order.
+- System automatically creates a chat between the client and all users with role `manager`.
+- Chat `category` is set to `sales`.
+
+#### 5.10.6 Send Message
+
+1. User types a message in the input field and clicks **Send**.
+2. System creates a `message` record with `status = unread`.
+3. Message appears in the thread immediately.
+
+---
+
+## 6. UI/UX Guidelines
+
+### Component Library
+
+Use **shadcn/ui** for all UI primitives. Do not build custom components when a shadcn/ui equivalent exists.
+
+| UI Pattern | shadcn/ui Component |
+|---|---|
+| Data tables (users, orders, sites, invoices) | `<DataTable>` with `@tanstack/react-table` |
+| Forms (invite, edit, create) | `<Form>` with `react-hook-form` + `zod` |
+| Confirmation dialogs (disable, archive, send) | `<AlertDialog>` |
+| Modals / side panels | `<Dialog>` or `<Sheet>` |
+| Status indicators | `<Badge>` with variant per status |
+| Notifications / toasts | `<Sonner>` (toast) |
+| Filters / dropdowns | `<Select>`, `<Combobox>` |
+| Navigation | `<Sidebar>` (role-based items) |
+| Loading states | `<Skeleton>` |
+| Pagination | Custom using shadcn/ui `<Button>` + server-side pagination |
+
+### Status Color Convention
+
+Apply consistent color-coding to `<Badge>` across all modules:
+
+| Status | Badge Variant / Color |
+|---|---|
+| `pending` | `outline` (yellow) |
+| `active` | `default` (green) |
+| `disabled` | `secondary` (gray) |
+| `new` | `outline` (blue) |
+| `in_progress` | `default` (blue) |
+| `content_sent` | `default` (purple) |
+| `needs_changes` | `destructive` (red) |
+| `content_approved` | `default` (green) |
+| `published` | `default` (teal) |
+| `completed` | `secondary` (gray-green) |
+| `canceled` | `destructive` (red) |
+| `draft` | `outline` (gray) |
+| `sent` | `default` (blue) |
+| `paid` | `default` (green) |
+| `archived` | `secondary` (gray) |
+
+### Layout
+
+- Use a persistent **left sidebar** (shadcn/ui `<Sidebar>`) with role-based navigation items.
+- Each role sees only the modules they have access to.
+- Use **Next.js App Router layouts** per role group (e.g., `/dashboard/client/`, `/dashboard/manager/`).
+- Protect all routes with **Supabase session middleware** — unauthenticated users are redirected to `/login`.
+
+### Forms
+
+- All forms use **`react-hook-form`** + **`zod`** for validation, wired through shadcn/ui `<Form>`.
+- Show inline field-level errors beneath each input.
+- Disable the submit button while a request is in flight; show a loading spinner inside the button.
+
+---
+
+## 7. Global Business Rules
+
+1. **User status gates access.** Users with `status = disabled` cannot log in.
+2. **Editing a site resets its status to `pending`.** It must be re-approved by an admin before it is visible in the client catalog.
+3. **Sourcer assignment is recorded at order creation.** Even if the sourcer is later disabled, the historical link on the order is preserved for earnings calculation.
+4. **A disabled copywriter's orders must be reassigned before deactivation.**
+5. **A disabled sourcer's sites have `sourcer_id` set to `null`.** The sites themselves are not archived.
+6. **A user cannot deactivate themselves.**
+7. **Invoices are created automatically by a system job, not manually.** Managers and admins can only edit, send, and mark them as paid.
+8. **Invoice billing period and actual publication date may differ.** Managers can adjust publication dates on invoice items before sending.
+9. **One invoice per client per billing period.** Multiple orders roll into one invoice.
+10. **Support chat is auto-created on first login.** Sales chat is auto-created on first order placement. Both are created by the system, not the user.
+11. **Order status transitions are strictly sequential.** No skipping statuses (e.g., cannot go from `new` directly to `content_approved`).
+12. **RLS enforces data isolation.** Never rely solely on frontend guards — all access rules must be mirrored in Supabase RLS policies.
+13. **Every client must have a manager assigned.** `manager_id` is required and must be set at invite time. A client cannot exist without a manager.
+14. **Manager auto-assignment on invite.** When a manager invites a client, `manager_id` is set automatically to that manager's id. When an admin invites a client, the admin must explicitly select a manager — the invite form is invalid without one.
+15. **Only admins can reassign a client's manager.** Managers cannot change their own assignment or another manager's clients.
