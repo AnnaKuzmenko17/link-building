@@ -1,0 +1,2 @@
+-- Superseded by migration 009 — revoke from PUBLIC instead of specific roles.
+-- Kept as a no-op placeholder to preserve migration history continuity.

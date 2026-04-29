@@ -1,5 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
+import type { Role } from '@/types'
+
+const VALID_ROLES: readonly Role[] = ['client', 'manager', 'copywriter', 'sourcer', 'admin']
 
 export async function proxy(request: NextRequest) {
   const { response, user } = await updateSession(request)
@@ -11,9 +14,9 @@ export async function proxy(request: NextRequest) {
   }
 
   if (user && pathname === '/login') {
-    const role = user.user_metadata?.role as string | undefined
-    const dest = role ? `/dashboard/${role}` : '/dashboard/client'
-    return NextResponse.redirect(new URL(dest, request.url))
+    const rawRole = user.user_metadata?.role
+    const role: Role = VALID_ROLES.includes(rawRole) ? rawRole : 'client'
+    return NextResponse.redirect(new URL(`/dashboard/${role}`, request.url))
   }
 
   return response
