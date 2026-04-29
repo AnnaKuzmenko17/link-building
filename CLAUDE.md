@@ -59,6 +59,6 @@ All shared types are in `src/types/index.ts` — enums (`Role`, `OrderStatus`, e
 
 ```
 NEXT_PUBLIC_SUPABASE_URL        # Supabase project URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY   # public anon key
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY  # public publishable key
 SUPABASE_SERVICE_ROLE_KEY       # server-only, admin operations
 ```
