@@ -26,21 +26,5 @@ export async function loginAction(email: string, password: string): Promise<Logi
     return { success: false, error: 'Invalid email or password.' }
   }
 
-  const { data: profile } = await supabase
-    .from('users')
-    .select('role, status')
-    .eq('id', data.user.id)
-    .single()
-
-  if (!profile) {
-    await supabase.auth.signOut()
-    return { success: false, error: 'Account setup is incomplete. Contact support.' }
-  }
-
-  if (profile.status === 'disabled') {
-    await supabase.auth.signOut()
-    return { success: false, error: 'Your account has been disabled. Contact support.' }
-  }
-
-  return { success: true, role: resolveRole(profile.role) }
+  return { success: true, role: resolveRole(data.user.user_metadata.role) }
 }
