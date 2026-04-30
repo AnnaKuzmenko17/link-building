@@ -1,7 +1,8 @@
+import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
-export function Logo({ className }: { className?: string }) {
-  return (
+export function Logo({ className, href }: { className?: string; href?: string }) {
+  const content = (
     <div className={cn('flex items-center gap-2', className)}>
       <svg
         width="28"
@@ -42,7 +43,12 @@ export function Logo({ className }: { className?: string }) {
         {/* centre connector */}
         <line x1="11" y1="14" x2="17" y2="14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       </svg>
-      <span className="text-lg font-semibold tracking-tight">Linkbuilding</span>
+      <span className="text-lg font-semibold tracking-tight">LinkBuilding</span>
     </div>
   )
+
+  if (href) {
+    return <Link href={href}>{content}</Link>
+  }
+  return content
 }

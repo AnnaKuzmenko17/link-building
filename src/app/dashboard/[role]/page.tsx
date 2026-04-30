@@ -1,25 +1,35 @@
-import { VALID_ROLES } from '@/types'
+import { Suspense } from 'react'
+import { createClient } from '@/lib/supabase/server'
+import { requireSession } from '@/lib/auth/get-session'
+import { getMetricsForRole } from '@/lib/queries/dashboard-metrics'
+import { PageHeader } from '@/components/shared/page-header'
+import { MetricsGrid, MetricsGridSkeleton } from '@/components/shared/metrics-grid'
 import type { Role } from '@/types'
-import { notFound } from 'next/navigation'
-import { LogoutButton } from '@/components/shared/logout-button'
 
-export default async function DashboardPage({
-  params,
-}: {
-  params: Promise<{ role: string }>
-}) {
-  const { role } = await params
+const skeletonCount: Record<Role, 2 | 3> = {
+  client: 2,
+  manager: 3,
+  copywriter: 2,
+  sourcer: 2,
+  admin: 3,
+}
 
-  if (!VALID_ROLES.includes(role as Role)) {
-    notFound()
-  }
+async function Metrics({ role, userId }: { role: Role; userId: string }) {
+  const supabase = await createClient()
+  const metrics = await getMetricsForRole(supabase, role, userId)
+  return <MetricsGrid metrics={metrics} />
+}
+
+export default async function DashboardHome() {
+  const { user, role } = await requireSession()
+  const firstName = user.user_metadata?.first_name ?? 'there'
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4">
-      <p className="text-muted-foreground text-sm">
-        Dashboard coming soon — logged in as <strong>{role}</strong>.
-      </p>
-      <LogoutButton />
-    </div>
+    <>
+      <PageHeader title={`Welcome back, ${firstName}`} />
+      <Suspense fallback={<MetricsGridSkeleton count={skeletonCount[role]} />}>
+        <Metrics role={role} userId={user.id} />
+      </Suspense>
+    </>
   )
 }
