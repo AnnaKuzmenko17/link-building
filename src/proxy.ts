@@ -1,8 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 import type { Role } from '@/types'
-
-const VALID_ROLES: readonly Role[] = ['client', 'manager', 'copywriter', 'sourcer', 'admin']
+import { VALID_ROLES } from '@/types'
 
 export async function proxy(request: NextRequest) {
   const { response, user } = await updateSession(request)

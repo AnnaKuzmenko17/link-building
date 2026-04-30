@@ -9,6 +9,8 @@ export type InvoiceStatus = Enums<'invoice_status'>
 export type ChatCategory = Enums<'chat_category'>
 export type MessageStatus = Enums<'message_status'>
 
+export const VALID_ROLES = ['client', 'manager', 'copywriter', 'sourcer', 'admin'] as const satisfies readonly Role[]
+
 // Entity types derived from database row types
 export type User = Tables<'users'>
 export type Site = Tables<'sites'>
