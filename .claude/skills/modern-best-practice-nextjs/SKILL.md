@@ -1,6 +1,12 @@
 ---
 name: modern-best-practice-nextjs
 description: Build modern Next.js apps with App Router and best practices
+triggers:
+  - creating or editing files inside app/ directory
+  - adding a new route, page, layout, or loading/error boundary
+  - writing server actions or server components
+  - data fetching in Next.js
+  - working with Next.js middleware, metadata, or route handlers
 ---
 
 # Next.js Best Practices (App Router)

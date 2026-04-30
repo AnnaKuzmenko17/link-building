@@ -23,7 +23,7 @@ export async function forgotPasswordAction(email: string): Promise<{ success: tr
   })
 
   if (error) {
-    return { success: false, error: 'internal' }
+    return { success: false, error: 'INTERNAL_ERROR' }
   }
 
   return { success: true }

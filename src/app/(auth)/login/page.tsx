@@ -55,10 +55,11 @@ export default function LoginPage() {
               autoComplete="email"
               placeholder="you@example.com"
               aria-invalid={!!errors.email}
+              aria-describedby={errors.email ? 'email-error' : undefined}
               {...register('email')}
             />
             {errors.email && (
-              <p className="text-xs text-destructive">{errors.email.message}</p>
+              <p id="email-error" className="text-xs text-destructive">{errors.email.message}</p>
             )}
           </div>
 
@@ -76,10 +77,11 @@ export default function LoginPage() {
               id="password"
               autoComplete="current-password"
               aria-invalid={!!errors.password}
+              aria-describedby={errors.password ? 'password-error' : undefined}
               {...register('password')}
             />
             {errors.password && (
-              <p className="text-xs text-destructive">{errors.password.message}</p>
+              <p id="password-error" className="text-xs text-destructive">{errors.password.message}</p>
             )}
           </div>
 

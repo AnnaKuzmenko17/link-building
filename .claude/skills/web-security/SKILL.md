@@ -1,6 +1,12 @@
 ---
 name: web-security
 description: Enforce web security and avoid security vulnerabilities
+triggers:
+  - writing authentication or authorization logic
+  - handling user input, form data, or query params
+  - working with cookies, tokens, or session storage
+  - writing server actions, API routes, or route handlers
+  - asked to review code for security issues
 ---
 
 # Web Security

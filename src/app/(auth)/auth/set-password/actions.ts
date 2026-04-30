@@ -2,15 +2,14 @@
 
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
-import type { Role } from '@/types'
-import { VALID_ROLES } from '@/types'
+import { resolveRole } from '@/lib/resolve-role'
 
 const schema = z.object({
   password: z.string().min(8),
 })
 
 type SetPasswordResult =
-  | { success: true; role: Role }
+  | { success: true; role: ReturnType<typeof resolveRole> }
   | { success: false; error: string }
 
 export async function setPasswordAction(
@@ -42,11 +41,7 @@ export async function setPasswordAction(
       .select('role')
       .single()
 
-    const role: Role = VALID_ROLES.includes(profile?.role as Role)
-      ? (profile!.role as Role)
-      : 'client'
-
-    return { success: true, role }
+    return { success: true, role: resolveRole(profile?.role) }
   }
 
   const { data: profile } = await supabase
@@ -55,9 +50,5 @@ export async function setPasswordAction(
     .eq('id', user.id)
     .single()
 
-  const role: Role = VALID_ROLES.includes(profile?.role as Role)
-    ? (profile!.role as Role)
-    : 'client'
-
-  return { success: true, role }
+  return { success: true, role: resolveRole(profile?.role) }
 }

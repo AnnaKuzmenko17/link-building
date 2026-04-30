@@ -25,7 +25,7 @@ const schema = z
 type FormValues = z.infer<typeof schema>
 
 interface Props {
-  isChange: boolean
+  mode: 'first-login' | 'change'
 }
 
 const copy = {
@@ -45,9 +45,8 @@ const copy = {
   },
 }
 
-export default function SetPasswordForm({ isChange }: Props) {
+export default function SetPasswordForm({ mode }: Props) {
   const router = useRouter()
-  const mode = isChange ? 'change' : 'first-login'
   const t = copy[mode]
 
   const {
@@ -62,7 +61,7 @@ export default function SetPasswordForm({ isChange }: Props) {
       toast.error(result.error)
       return
     }
-    if (isChange) {
+    if (mode === 'change') {
       router.back()
     } else {
       router.push(`/dashboard/${result.role}`)
@@ -84,10 +83,11 @@ export default function SetPasswordForm({ isChange }: Props) {
               id="password"
               autoComplete="new-password"
               aria-invalid={!!errors.password}
+              aria-describedby={errors.password ? 'password-error' : undefined}
               {...register('password')}
             />
             {errors.password && (
-              <p className="text-xs text-destructive">{errors.password.message}</p>
+              <p id="password-error" className="text-xs text-destructive">{errors.password.message}</p>
             )}
           </div>
 
@@ -97,10 +97,11 @@ export default function SetPasswordForm({ isChange }: Props) {
               id="confirmPassword"
               autoComplete="new-password"
               aria-invalid={!!errors.confirmPassword}
+              aria-describedby={errors.confirmPassword ? 'confirm-password-error' : undefined}
               {...register('confirmPassword')}
             />
             {errors.confirmPassword && (
-              <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>
+              <p id="confirm-password-error" className="text-xs text-destructive">{errors.confirmPassword.message}</p>
             )}
           </div>
 

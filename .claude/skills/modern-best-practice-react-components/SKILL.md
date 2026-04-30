@@ -1,6 +1,11 @@
 ---
 name: modern-best-practice-react-components
 description: Build clean, modern React components that apply common best practices and avoid common pitfalls like unnecessary state management or useEffect usage
+triggers:
+  - creating or editing a React component (.tsx, .jsx)
+  - asked to build a UI component, page, or view
+  - adding state, effects, or event handlers to a component
+  - refactoring a component
 ---
 
 # Writing React Components

@@ -6,5 +6,6 @@ export default async function SetPasswordPage({
   searchParams: Promise<{ mode?: string }>
 }) {
   const { mode } = await searchParams
-  return <SetPasswordForm isChange={mode === 'change'} />
+  const resolvedMode = mode === 'change' ? 'change' : 'first-login'
+  return <SetPasswordForm mode={resolvedMode} />
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -25,10 +25,14 @@ const schema = z
 
 type FormValues = z.infer<typeof schema>
 
+const supabase = createClient()
+
+const RECOVERY_TIMEOUT_MS = 8000
+
 export default function ResetPasswordPage() {
-  const supabase = useMemo(() => createClient(), [])
   const [ready, setReady] = useState(false)
   const [done, setDone] = useState(false)
+  const [expired, setExpired] = useState(false)
 
   const {
     register,
@@ -42,8 +46,14 @@ export default function ResetPasswordPage() {
         setReady(true)
       }
     })
-    return () => subscription.unsubscribe()
-  }, [supabase])
+
+    const timeout = setTimeout(() => setExpired(true), RECOVERY_TIMEOUT_MS)
+
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(timeout)
+    }
+  }, [])
 
   async function onSubmit(values: FormValues) {
     const { error } = await supabase.auth.updateUser({ password: values.password })
@@ -62,8 +72,19 @@ export default function ResetPasswordPage() {
         <CardHeader>
           <Logo className="mb-2" />
           <CardTitle>Reset password</CardTitle>
-          <CardDescription>Waiting for your reset link to be verified…</CardDescription>
+          <CardDescription>
+            {expired
+              ? 'This reset link has expired or is invalid.'
+              : 'Waiting for your reset link to be verified…'}
+          </CardDescription>
         </CardHeader>
+        {expired && (
+          <CardContent>
+            <Link href="/auth/forgot-password" className="text-sm text-primary hover:underline">
+              Request a new reset link
+            </Link>
+          </CardContent>
+        )}
       </Card>
     )
   }
@@ -100,10 +121,11 @@ export default function ResetPasswordPage() {
               id="password"
               autoComplete="new-password"
               aria-invalid={!!errors.password}
+              aria-describedby={errors.password ? 'password-error' : undefined}
               {...register('password')}
             />
             {errors.password && (
-              <p className="text-xs text-destructive">{errors.password.message}</p>
+              <p id="password-error" className="text-xs text-destructive">{errors.password.message}</p>
             )}
           </div>
 
@@ -113,10 +135,11 @@ export default function ResetPasswordPage() {
               id="confirmPassword"
               autoComplete="new-password"
               aria-invalid={!!errors.confirmPassword}
+              aria-describedby={errors.confirmPassword ? 'confirm-password-error' : undefined}
               {...register('confirmPassword')}
             />
             {errors.confirmPassword && (
-              <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>
+              <p id="confirm-password-error" className="text-xs text-destructive">{errors.confirmPassword.message}</p>
             )}
           </div>
 

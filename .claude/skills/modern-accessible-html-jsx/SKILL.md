@@ -1,6 +1,12 @@
 ---
 name: modern-accessible-html-jsx
 description: Write clean, modern, and highly accessible HTML & JSX code, using semantically correct elements and attributes
+triggers:
+  - writing JSX or HTML markup
+  - building forms, inputs, or interactive controls
+  - adding images, icons, or media elements
+  - asked about accessibility or ARIA
+  - creating navigation, modals, dialogs, or menus
 ---
 
 # Clean & Accessible HTML

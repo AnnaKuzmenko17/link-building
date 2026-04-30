@@ -1,6 +1,11 @@
 ---
 name: clean-typescript
 description: Write clean, efficient TypeScript code that follows common best practices
+triggers:
+  - writing or editing any TypeScript file (.ts, .tsx)
+  - defining types, interfaces, or enums
+  - asked to type or fix TypeScript errors
+  - writing utility functions or shared logic in TypeScript
 ---
 
 # Clean TypeScript

@@ -1,6 +1,11 @@
 ---
 name: modern-tailwind
 description: Build clean, scalable UIs with Tailwind CSS using modern utilities and variants
+triggers:
+  - adding or editing Tailwind CSS classes
+  - styling a component, page, or layout
+  - implementing responsive design or dark mode
+  - asked about hover, focus, or state-based styling
 ---
 
 # Tailwind CSS Best Practices

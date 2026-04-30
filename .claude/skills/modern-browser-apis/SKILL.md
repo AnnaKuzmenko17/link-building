@@ -1,6 +1,13 @@
 ---
 name: use-modern-browser-apis
 description: Utilize built-in browser APIs (like Popover API, View Transitions etc) instead of building features manually via JavaScript
+triggers:
+  - implementing clipboard copy/paste
+  - adding page transitions or animations between routes
+  - lazy loading, infinite scroll, or viewport detection
+  - cross-tab communication
+  - file upload or local file access
+  - asking to avoid a JS library for a browser-native feature
 ---
 
 # Using Modern Browser APIs

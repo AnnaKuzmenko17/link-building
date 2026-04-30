@@ -2,8 +2,7 @@
 
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
-import type { Role } from '@/types'
-import { VALID_ROLES } from '@/types'
+import { resolveRole } from '@/lib/resolve-role'
 
 const schema = z.object({
   email: z.string().email(),
@@ -11,7 +10,7 @@ const schema = z.object({
 })
 
 type LoginResult =
-  | { success: true; role: Role }
+  | { success: true; role: ReturnType<typeof resolveRole> }
   | { success: false; error: string }
 
 export async function loginAction(email: string, password: string): Promise<LoginResult> {
@@ -33,14 +32,15 @@ export async function loginAction(email: string, password: string): Promise<Logi
     .eq('id', data.user.id)
     .single()
 
-  if (profile?.status === 'disabled') {
+  if (!profile) {
+    await supabase.auth.signOut()
+    return { success: false, error: 'Account setup is incomplete. Contact support.' }
+  }
+
+  if (profile.status === 'disabled') {
     await supabase.auth.signOut()
     return { success: false, error: 'Your account has been disabled. Contact support.' }
   }
 
-  const role: Role = VALID_ROLES.includes(profile?.role as Role)
-    ? (profile!.role as Role)
-    : 'client'
-
-  return { success: true, role }
+  return { success: true, role: resolveRole(profile.role) }
 }
