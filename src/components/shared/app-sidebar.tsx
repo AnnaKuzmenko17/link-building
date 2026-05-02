@@ -113,7 +113,7 @@ export function AppSidebar({ role, user }: Props) {
       </SidebarContent>
 
       <SidebarFooter className="p-4">
-        <div className="flex items-center gap-3">
+        <Link href={`/dashboard/${role}/profile`} className="flex items-center gap-3 rounded-md hover:bg-sidebar-accent transition-colors p-1 -mx-1">
           <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
             {avatar}
           </div>
@@ -121,7 +121,7 @@ export function AppSidebar({ role, user }: Props) {
             <p className="truncate text-sm font-medium">{displayName}</p>
             <p className="truncate text-xs text-muted-foreground">{user.email}</p>
           </div>
-        </div>
+        </Link>
         <LogoutButton />
       </SidebarFooter>
     </Sidebar>
