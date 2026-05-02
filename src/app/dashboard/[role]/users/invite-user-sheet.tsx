@@ -78,6 +78,7 @@ export function InviteUserSheet({ open, onOpenChange, viewerRole, viewerName, ac
   const watchedRole = watch('role')
   const isClientRole = watchedRole === 'client'
   const roleOptions = viewerRole === 'manager' ? managerRoleOptions : adminRoleOptions
+  const roleItems = roleOptions.map((r) => ({ value: r, label: capitalize(r) }))
 
   async function onSubmit(values: FormValues) {
     setIsPending(true)
@@ -139,6 +140,7 @@ export function InviteUserSheet({ open, onOpenChange, viewerRole, viewerName, ac
                 <Select
                   value={field.value}
                   onValueChange={(value) => handleRoleChange(value, field.onChange)}
+                  items={roleItems}
                 >
                   <SelectTrigger id="role" aria-invalid={!!errors.role} aria-describedby={errors.role ? 'invite-role-error' : undefined} className="w-full">
                     <SelectValue />
@@ -166,12 +168,16 @@ export function InviteUserSheet({ open, onOpenChange, viewerRole, viewerName, ac
                   name="manager_id"
                   control={control}
                   render={({ field }) => {
-                    const items = activeManagers.map((m) => ({
+                    const managerItems = activeManagers.map((m) => ({
                       value: m.id,
                       label: `${m.first_name} ${m.last_name}`.trim(),
                     }))
                     return (
-                      <Select value={field.value ?? ''} onValueChange={field.onChange} items={items}>
+                      <Select
+                        value={field.value ?? null}
+                        onValueChange={field.onChange}
+                        items={managerItems}
+                      >
                         <SelectTrigger id="manager_id" aria-invalid={!!errors.manager_id} aria-describedby={errors.manager_id ? 'invite-manager-error' : undefined} className="w-full">
                           <SelectValue placeholder="Select a manager…" />
                         </SelectTrigger>

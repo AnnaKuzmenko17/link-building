@@ -67,6 +67,7 @@ export function EditUserSheet({ open, onOpenChange, user, viewerRole }: Props) {
   })
 
   const roleOptions = viewerRole === 'admin' ? ALL_ROLES : MANAGER_EDITABLE_ROLES
+  const roleItems = roleOptions.map((r) => ({ value: r, label: capitalize(r) }))
 
   async function onSubmit(values: FormValues) {
     setIsPending(true)
@@ -137,7 +138,7 @@ export function EditUserSheet({ open, onOpenChange, user, viewerRole }: Props) {
               name="role"
               control={control}
               render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
+                <Select value={field.value} onValueChange={field.onChange} items={roleItems}>
                   <SelectTrigger id="edit_role" className="w-full">
                     <SelectValue />
                   </SelectTrigger>

@@ -29,6 +29,22 @@ export function UsersFilterBar({ defaultValues }: Props) {
   const roleValue = searchParams.get('role') ?? 'all'
   const statusValue = searchParams.get('status') ?? 'all'
 
+  const roleItems = [
+    { value: 'all', label: 'All Roles' },
+    { value: 'client', label: 'Client' },
+    { value: 'manager', label: 'Manager' },
+    { value: 'copywriter', label: 'Copywriter' },
+    { value: 'sourcer', label: 'Sourcer' },
+    { value: 'admin', label: 'Admin' },
+  ]
+
+  const statusItems = [
+    { value: 'all', label: 'All Statuses' },
+    { value: 'pending', label: 'Pending' },
+    { value: 'active', label: 'Active' },
+    { value: 'disabled', label: 'Disabled' },
+  ]
+
   function pushParams(updates: Record<string, string | undefined>) {
     const params = new URLSearchParams()
     const merged = { role: defaultValues.role, status: defaultValues.status, search: defaultValues.search, ...updates }
@@ -67,7 +83,7 @@ export function UsersFilterBar({ defaultValues }: Props) {
           onChange={handleSearchChange}
         />
       </div>
-      <Select value={roleValue} onValueChange={handleRoleChange}>
+      <Select value={roleValue} onValueChange={handleRoleChange} items={roleItems}>
         <SelectTrigger className="w-40">
           <SelectValue placeholder="All Roles" />
         </SelectTrigger>
@@ -80,7 +96,7 @@ export function UsersFilterBar({ defaultValues }: Props) {
           <SelectItem value="admin">Admin</SelectItem>
         </SelectContent>
       </Select>
-      <Select value={statusValue} onValueChange={handleStatusChange}>
+      <Select value={statusValue} onValueChange={handleStatusChange} items={statusItems}>
         <SelectTrigger className="w-40">
           <SelectValue placeholder="All Statuses" />
         </SelectTrigger>

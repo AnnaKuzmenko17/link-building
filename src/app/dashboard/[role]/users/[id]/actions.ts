@@ -2,7 +2,6 @@
 
 import { z } from 'zod'
 import { requireSession } from '@/lib/auth/get-session'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import {
   getUserById,
@@ -54,9 +53,9 @@ export async function editUserAction(input: {
 
   const { targetId, first_name, last_name, email, role } = parsed.data
 
-  const supabase = await createClient()
+  const adminClient = createAdminClient()
 
-  const target = await getUserById(supabase, targetId)
+  const target = await getUserById(adminClient, targetId)
   if (!target) return { success: false, error: 'User not found.' }
 
   if (viewerRole === 'manager' && (target.role === 'admin' || target.role === 'manager')) {
@@ -68,16 +67,15 @@ export async function editUserAction(input: {
   }
 
   if (email !== target.email) {
-    const existing = await findUserByEmailExcluding(supabase, email, targetId)
+    const existing = await findUserByEmailExcluding(adminClient, email, targetId)
     if (existing) {
       return { success: false, error: 'A user with this email already exists.' }
     }
   }
 
-  const { error } = await updateUserProfile(supabase, targetId, { first_name, last_name, email, role: role as Role })
+  const { error } = await updateUserProfile(adminClient, targetId, { first_name, last_name, email, role: role as Role })
   if (error) return { success: false, error: error.message }
 
-  const adminClient = createAdminClient()
   await adminClient.auth.admin.updateUserById(targetId, {
     email,
     user_metadata: { role },
@@ -95,12 +93,11 @@ export async function resendInviteAction(targetId: string): Promise<Result> {
     return { success: false, error: 'Not authorized.' }
   }
 
-  const supabase = await createClient()
-  const target = await getUserById(supabase, targetId)
+  const adminClient = createAdminClient()
+  const target = await getUserById(adminClient, targetId)
   if (!target) return { success: false, error: 'User not found.' }
   if (target.status !== 'pending') return { success: false, error: 'User is not pending.' }
 
-  const adminClient = createAdminClient()
   const { data, error } = await adminClient.auth.admin.generateLink({
     type: 'recovery',
     email: target.email,
@@ -158,17 +155,17 @@ export async function getDisablePreCheckAction(targetId: string): Promise<Disabl
   const { role: viewerRole } = await requireSession()
   if (viewerRole !== 'admin') return { success: false, error: 'Not authorized.' }
 
-  const supabase = await createClient()
-  const target = await getUserById(supabase, targetId)
+  const adminClient = createAdminClient()
+  const target = await getUserById(adminClient, targetId)
   if (!target) return { success: false, error: 'User not found.' }
   if (target.status !== 'active') return { success: false, error: 'User is not active.' }
 
   if (target.role === 'sourcer') return { type: 'sourcer' }
 
   if (target.role === 'copywriter') {
-    const orders = await getActiveOrdersForCopywriter(supabase, targetId)
+    const orders = await getActiveOrdersForCopywriter(adminClient, targetId)
     if (orders.length > 0) {
-      const copywriters = await getActiveCopywriters(supabase, targetId)
+      const copywriters = await getActiveCopywriters(adminClient, targetId)
       return { type: 'copywriter_reassign', orders, copywriters }
     }
   }
@@ -183,12 +180,11 @@ export async function disableUserAction(targetId: string): Promise<Result> {
   if (viewerRole !== 'admin') return { success: false, error: 'Not authorized.' }
   if (user.id === targetId) return { success: false, error: 'Cannot disable your own account.' }
 
-  const supabase = await createClient()
-  const target = await getUserById(supabase, targetId)
+  const adminClient = createAdminClient()
+  const target = await getUserById(adminClient, targetId)
   if (!target) return { success: false, error: 'User not found.' }
   if (target.role === 'admin') return { success: false, error: 'Cannot disable another admin account.' }
 
-  const adminClient = createAdminClient()
   const { error } = await setUserStatus(adminClient, targetId, 'disabled')
   if (error) return { success: false, error: 'Failed to disable user. Please try again.' }
   return { success: true }
@@ -201,12 +197,11 @@ export async function disableSourcerAction(targetId: string): Promise<Result> {
   if (viewerRole !== 'admin') return { success: false, error: 'Not authorized.' }
   if (user.id === targetId) return { success: false, error: 'Cannot disable your own account.' }
 
-  const supabase = await createClient()
+  const adminClient = createAdminClient()
 
-  const { error: sitesError } = await unlinkSourcerFromSites(supabase, targetId)
+  const { error: sitesError } = await unlinkSourcerFromSites(adminClient, targetId)
   if (sitesError) return { success: false, error: 'Failed to unlink sourcer from sites. Please try again.' }
 
-  const adminClient = createAdminClient()
   const { error } = await setUserStatus(adminClient, targetId, 'disabled')
   if (error) return { success: false, error: 'Failed to disable user. Please try again.' }
   return { success: true }
@@ -236,9 +231,9 @@ export async function disableCopywriterWithReassignAction(input: {
   }
 
   const { userId, assignments } = parsed.data
-  const supabase = await createClient()
+  const adminClient = createAdminClient()
 
-  const validCopywriters = await getActiveCopywriters(supabase, userId)
+  const validCopywriters = await getActiveCopywriters(adminClient, userId)
   const validCopywriterIds = new Set(validCopywriters.map((c) => c.id))
 
   for (const { orderId, copywriterId } of assignments) {
@@ -246,11 +241,10 @@ export async function disableCopywriterWithReassignAction(input: {
       return { success: false, error: 'Invalid copywriter selected.' }
     }
 
-    const { error } = await reassignOrder(supabase, orderId, userId, copywriterId)
+    const { error } = await reassignOrder(adminClient, orderId, userId, copywriterId)
     if (error) return { success: false, error: 'Failed to reassign order. Please try again.' }
   }
 
-  const adminClient = createAdminClient()
   const { error } = await setUserStatus(adminClient, userId, 'disabled')
   if (error) return { success: false, error: 'Failed to disable user. Please try again.' }
   return { success: true }
@@ -263,12 +257,11 @@ export async function activateUserAction(targetId: string): Promise<Result> {
   if (viewerRole !== 'admin') return { success: false, error: 'Not authorized.' }
   if (user.id === targetId) return { success: false, error: 'Cannot modify your own account status.' }
 
-  const supabase = await createClient()
-  const target = await getUserById(supabase, targetId)
+  const adminClient = createAdminClient()
+  const target = await getUserById(adminClient, targetId)
   if (!target) return { success: false, error: 'User not found.' }
   if (target.role === 'admin') return { success: false, error: 'Cannot modify another admin account status.' }
 
-  const adminClient = createAdminClient()
   const { error } = await setUserStatus(adminClient, targetId, 'active')
   if (error) return { success: false, error: 'Failed to activate user. Please try again.' }
   return { success: true }
@@ -295,18 +288,16 @@ export async function assignManagerAction(input: {
 
   const { userId, managerId } = parsed.data
 
-  const supabase = await createClient()
+  const adminClient = createAdminClient()
   const [targetUser, managerUser] = await Promise.all([
-    getUserById(supabase, userId),
-    getUserById(supabase, managerId),
+    getUserById(adminClient, userId),
+    getUserById(adminClient, managerId),
   ])
 
   if (!targetUser) return { success: false, error: 'User not found.' }
   if (!managerUser) return { success: false, error: 'Manager not found.' }
   if (managerUser.role !== 'manager') return { success: false, error: 'Selected user is not a manager.' }
   if (managerUser.status !== 'active') return { success: false, error: 'Selected manager is not active.' }
-
-  const adminClient = createAdminClient()
 
   const { error } = await assignManagerToUser(adminClient, userId, managerId)
   if (error) return { success: false, error: 'Failed to assign manager. Please try again.' }

@@ -136,7 +136,7 @@ export function UserActions({ targetUser, viewerRole, currentUserId, activeManag
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="contents">
       {canEdit && (
         <Button variant="outline" onClick={() => setEditOpen(true)}>Edit</Button>
       )}

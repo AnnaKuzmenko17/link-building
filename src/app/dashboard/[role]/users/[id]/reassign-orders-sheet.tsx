@@ -57,6 +57,11 @@ export function ReassignOrdersSheet({ open, onOpenChange, targetUserId, orders, 
     },
   })
 
+  const copywriterItems = copywriters.map((c) => ({
+    value: c.id,
+    label: `${c.first_name} ${c.last_name}`.trim(),
+  }))
+
   async function onSubmit(values: FormValues) {
     setIsPending(true)
     const result = await disableCopywriterWithReassignAction({
@@ -96,7 +101,7 @@ export function ReassignOrdersSheet({ open, onOpenChange, targetUserId, orders, 
                 name={`assignments.${index}.copywriterId`}
                 control={control}
                 render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select value={field.value} onValueChange={field.onChange} items={copywriterItems}>
                     <SelectTrigger
                       id={`order-${order.id}`}
                       className="w-full"

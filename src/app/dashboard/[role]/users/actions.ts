@@ -2,9 +2,8 @@
 
 import { z } from 'zod'
 import { requireSession } from '@/lib/auth/get-session'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { findUserByEmail, insertUserProfile } from '@/lib/data/users'
+import { findUserByEmail } from '@/lib/data/users'
 import type { Role } from '@/types'
 import { getAppUrl } from '@/lib/get-app-url'
 
@@ -42,23 +41,25 @@ export async function inviteUserAction(input: {
     return { success: false, error: 'You are not allowed to invite users with that role.' }
   }
 
-  if (role === 'client') {
-    const resolvedManagerId = viewerRole === 'manager' ? user.id : manager_id
-    if (!resolvedManagerId) {
-      return { success: false, error: 'A manager is required for client users.' }
-    }
+  const resolvedManagerId = role === 'client'
+    ? (viewerRole === 'manager' ? user.id : manager_id)
+    : undefined
+
+  if (role === 'client' && !resolvedManagerId) {
+    return { success: false, error: 'A manager is required for client users.' }
   }
 
-  const supabase = await createClient()
+  const adminClient = createAdminClient()
 
-  const existing = await findUserByEmail(supabase, email)
+  const existing = await findUserByEmail(adminClient, email)
   if (existing) {
     return { success: false, error: 'A user with this email already exists.' }
   }
 
-  const adminClient = createAdminClient()
-  const { data: authData, error: authError } = await adminClient.auth.admin.inviteUserByEmail(email, {
-    data: { role },
+  // The trigger handle_new_user() auto-inserts the public.users profile row
+  // on auth.users insert, reading role and manager_id from raw_user_meta_data.
+  const { error: authError } = await adminClient.auth.admin.inviteUserByEmail(email, {
+    data: { role, manager_id: resolvedManagerId ?? null },
     redirectTo: `${getAppUrl()}/auth/set-password`,
   })
 
@@ -66,29 +67,7 @@ export async function inviteUserAction(input: {
     if (authError.message.toLowerCase().includes('already been registered')) {
       return { success: false, error: 'A user with this email already exists.' }
     }
-    return { success: false, error: authError.message ?? 'Failed to send invite.' }
-  }
-
-  if (!authData.user) {
     return { success: false, error: 'Failed to send invite.' }
-  }
-
-  const resolvedManagerId = role === 'client'
-    ? (viewerRole === 'manager' ? user.id : manager_id)
-    : undefined
-
-  const { error: insertError } = await insertUserProfile(supabase, {
-    id: authData.user.id,
-    email,
-    role: role as Role,
-    status: 'pending',
-    first_name: '',
-    last_name: '',
-    manager_id: resolvedManagerId ?? null,
-  })
-
-  if (insertError) {
-    return { success: false, error: 'User invited but profile creation failed. Please contact support.' }
   }
 
   return { success: true }
