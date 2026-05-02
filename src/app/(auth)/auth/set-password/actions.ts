@@ -1,32 +1,18 @@
 'use server'
 
-import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveRole } from '@/lib/resolve-role'
+import { getUserRoleAndStatus, getUserRole, activateUserAndGetRole } from '@/lib/data/users'
 
-const schema = z.object({
-  password: z.string().min(8),
-})
-
-type SetPasswordResult =
+type ActivateResult =
   | { success: true; role: ReturnType<typeof resolveRole> }
   | { success: false; error: string }
 
-export async function setPasswordAction(
-  newPassword: string,
-  mode: 'first-login' | 'change'
-): Promise<SetPasswordResult> {
-  const parsed = schema.safeParse({ password: newPassword })
-  if (!parsed.success) {
-    return { success: false, error: 'Password must be at least 8 characters.' }
-  }
-
+// Called after the client has already updated the password via supabase.auth.updateUser().
+// Handles profile activation for first-login, or just returns the role for change mode.
+export async function activateSessionAction(mode: 'first-login' | 'change'): Promise<ActivateResult> {
   const supabase = await createClient()
-
-  const { error: updateError } = await supabase.auth.updateUser({ password: newPassword })
-  if (updateError) {
-    return { success: false, error: updateError.message }
-  }
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
@@ -34,21 +20,18 @@ export async function setPasswordAction(
   }
 
   if (mode === 'first-login') {
-    const { data: profile } = await supabase
-      .from('users')
-      .update({ status: 'active' })
-      .eq('id', user.id)
-      .select('role')
-      .single()
+    const existing = await getUserRoleAndStatus(supabase, user.id)
 
+    if (existing?.status !== 'pending') {
+      const profile = await getUserRole(supabase, user.id)
+      return { success: true, role: resolveRole(profile?.role) }
+    }
+
+    const adminClient = createAdminClient()
+    const profile = await activateUserAndGetRole(adminClient, user.id)
     return { success: true, role: resolveRole(profile?.role) }
   }
 
-  const { data: profile } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
+  const profile = await getUserRole(supabase, user.id)
   return { success: true, role: resolveRole(profile?.role) }
 }

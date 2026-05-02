@@ -1,10 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import type { MetricCard } from '@/lib/queries/dashboard-metrics'
+import { cn } from '@/lib/utils'
+import type { MetricCard } from '@/lib/data/metrics'
 
-const gridCols: Record<2 | 3, string> = {
+const gridCols: Partial<Record<number, string>> = {
+  1: '',
   2: 'sm:grid-cols-2',
   3: 'sm:grid-cols-3',
+  4: 'sm:grid-cols-4',
 }
 
 interface Props {
@@ -12,10 +15,10 @@ interface Props {
 }
 
 export function MetricsGrid({ metrics }: Props) {
-  const cols = (metrics.length === 3 ? 3 : 2) as 2 | 3
+  const colClass = gridCols[metrics.length] ?? 'sm:grid-cols-2'
 
   return (
-    <div className={`grid gap-4 ${gridCols[cols]}`}>
+    <div className={cn('grid gap-4', colClass)}>
       {metrics.map((metric) => (
         <Card key={metric.label}>
           <CardHeader>
@@ -32,7 +35,7 @@ export function MetricsGrid({ metrics }: Props) {
 
 export function MetricsGridSkeleton({ count }: { count: 2 | 3 }) {
   return (
-    <div className={`grid gap-4 ${gridCols[count]}`}>
+    <div className={cn('grid gap-4', gridCols[count])}>
       {Array.from({ length: count }).map((_, i) => (
         <Card key={i}>
           <CardHeader>

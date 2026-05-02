@@ -4,7 +4,7 @@ import type { Role } from '@/types'
 
 type Client = SupabaseClient<Database>
 
-const OPEN_ORDER_STATUSES = '("completed","canceled")'
+const CLOSED_ORDER_STATUSES = '("completed","canceled")'
 
 export interface MetricCard {
   label: string
@@ -15,7 +15,7 @@ async function getClientMetrics(supabase: Client, userId: string): Promise<Metri
   const [{ count: openOrders }, { count: invoicesDue }] = await Promise.all([
     supabase.from('orders').select('*', { count: 'exact', head: true })
       .eq('client_id', userId)
-      .not('status', 'in', OPEN_ORDER_STATUSES),
+      .not('status', 'in', CLOSED_ORDER_STATUSES),
     supabase.from('invoices').select('*', { count: 'exact', head: true })
       .eq('client_id', userId)
       .eq('status', 'sent'),
@@ -30,7 +30,7 @@ async function getClientMetrics(supabase: Client, userId: string): Promise<Metri
 async function getManagerMetrics(supabase: Client): Promise<MetricCard[]> {
   const [{ count: openOrders }, { count: pendingUsers }, { count: activeSites }] = await Promise.all([
     supabase.from('orders').select('*', { count: 'exact', head: true })
-      .not('status', 'in', OPEN_ORDER_STATUSES),
+      .not('status', 'in', CLOSED_ORDER_STATUSES),
     supabase.from('users').select('*', { count: 'exact', head: true })
       .eq('status', 'pending'),
     supabase.from('sites').select('*', { count: 'exact', head: true })
@@ -79,7 +79,7 @@ async function getSourcerMetrics(supabase: Client, userId: string): Promise<Metr
 async function getAdminMetrics(supabase: Client): Promise<MetricCard[]> {
   const [{ count: openOrders }, { count: totalUsers }, { count: activeSites }] = await Promise.all([
     supabase.from('orders').select('*', { count: 'exact', head: true })
-      .not('status', 'in', OPEN_ORDER_STATUSES),
+      .not('status', 'in', CLOSED_ORDER_STATUSES),
     supabase.from('users').select('*', { count: 'exact', head: true }),
     supabase.from('sites').select('*', { count: 'exact', head: true })
       .eq('status', 'active'),

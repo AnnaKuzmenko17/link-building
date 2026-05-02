@@ -9,7 +9,7 @@ function subscribe(callback: () => void) {
 }
 
 function getSnapshot() {
-  return window.innerWidth < MOBILE_BREAKPOINT
+  return window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`).matches
 }
 
 function getServerSnapshot() {

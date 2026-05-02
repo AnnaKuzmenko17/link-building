@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -10,7 +11,8 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { PasswordInput } from '@/components/shared/password-input'
 import { Logo } from '@/components/shared/logo'
-import { setPasswordAction } from './actions'
+import { createClient } from '@/lib/supabase/client'
+import { activateSessionAction } from './actions'
 
 const schema = z
   .object({
@@ -45,9 +47,61 @@ const copy = {
   },
 }
 
+const INVITE_TIMEOUT_MS = 10000
+
 export default function SetPasswordForm({ mode }: Props) {
   const router = useRouter()
   const t = copy[mode]
+  const [ready, setReady] = useState(mode === 'change')
+  const [timedOut, setTimedOut] = useState(false)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null)
+  const initializedRef = useRef(false)
+
+  useEffect(() => {
+    if (mode === 'change') return
+    // Guard against React Strict Mode double-invocation — the first mount
+    // consumes the hash token; the second mount would find no token and time out.
+    if (initializedRef.current) return
+    initializedRef.current = true
+
+    const supabase = createClient()
+    supabaseRef.current = supabase
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY' || event === 'INITIAL_SESSION') && session) {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current)
+        setReady(true)
+      }
+    })
+
+    // @supabase/ssr disables detectSessionInUrl, so we must manually exchange
+    // the hash fragment tokens into a session.
+    const hash = window.location.hash.slice(1)
+    const params = new URLSearchParams(hash)
+    const accessToken = params.get('access_token')
+    const refreshToken = params.get('refresh_token')
+
+    if (accessToken && refreshToken) {
+      supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken }).then(({ error }) => {
+        if (error) setTimedOut(true)
+      })
+    } else {
+      // No hash tokens — check if there's already a cookie session (change mode fallback)
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          if (timeoutRef.current) clearTimeout(timeoutRef.current)
+          setReady(true)
+        }
+      })
+    }
+
+    timeoutRef.current = setTimeout(() => setTimedOut(true), INVITE_TIMEOUT_MS)
+    return () => {
+      subscription.unsubscribe()
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    }
+  }, [mode])
 
   const {
     register,
@@ -56,16 +110,40 @@ export default function SetPasswordForm({ mode }: Props) {
   } = useForm<FormValues>({ resolver: zodResolver(schema) })
 
   async function onSubmit(values: FormValues) {
-    const result = await setPasswordAction(values.password, mode)
+    const supabase = supabaseRef.current ?? createClient()
+    const { error: updateError } = await supabase.auth.updateUser({ password: values.password })
+    if (updateError) {
+      toast.error(updateError.message)
+      return
+    }
+
+    const result = await activateSessionAction(mode)
     if (!result.success) {
       toast.error(result.error)
       return
     }
+
     if (mode === 'change') {
       router.back()
     } else {
       router.push(`/dashboard/${result.role}`)
     }
+  }
+
+  if (!ready) {
+    return (
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <Logo className="mb-2" />
+          <CardTitle>{t.title}</CardTitle>
+          <CardDescription>
+            {timedOut
+              ? 'This invite link has expired or is invalid. Ask an admin to resend the invite.'
+              : 'Verifying your invite link…'}
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    )
   }
 
   return (

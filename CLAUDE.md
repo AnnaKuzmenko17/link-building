@@ -33,7 +33,7 @@ This is a linkbuilding management platform with five roles: `client`, `manager`,
 | Server Component / Server Action / Route Handler | `src/lib/supabase/server.ts` → `await createClient()` |
 | Proxy (`proxy.ts`) | `src/lib/supabase/middleware.ts` → `updateSession()` |
 
-The service role key (`SUPABASE_SERVICE_ROLE_KEY`) is for admin operations only — never expose it to the browser.
+The secret key (`SUPABASE_SECRET_KEY`) is for admin operations only — never expose it to the browser.
 
 ### Route structure (planned)
 
@@ -59,6 +59,10 @@ All shared types are in `src/types/index.ts` — enums (`Role`, `OrderStatus`, e
 
 ```
 NEXT_PUBLIC_SUPABASE_URL        # Supabase project URL
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY  # public publishable key
-SUPABASE_SERVICE_ROLE_KEY       # server-only, admin operations
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY  # public key (replaces legacy anon key)
+SUPABASE_SECRET_KEY             # server-only, admin operations (replaces legacy service_role key)
+BREVO_API_KEY                   # server-only, used to send resend-invite emails via Brevo REST API
+BREVO_SENDER_EMAIL              # verified sender email address in Brevo
+BREVO_SENDER_NAME               # sender display name (optional, defaults to "Linkbuilding")
+APP_URL                         # server-only, canonical origin for email redirect links (e.g. https://app.example.com). Falls back to VERCEL_URL then localhost:3000.
 ```

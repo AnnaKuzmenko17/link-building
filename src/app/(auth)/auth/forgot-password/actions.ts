@@ -2,6 +2,7 @@
 
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import { getAppUrl } from '@/lib/get-app-url'
 
 const schema = z.object({ email: z.string().email() })
 
@@ -12,18 +13,13 @@ export async function forgotPasswordAction(email: string): Promise<{ success: tr
   }
 
   const supabase = await createClient()
-  
-  const vercelUrl = process.env.NEXT_PUBLIC_VERCEL_URL
-  const origin = vercelUrl
-    ? `https://${vercelUrl}`
-    : 'http://localhost:3000'
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${origin}/auth/reset-password`,
+    redirectTo: `${getAppUrl()}/auth/reset-password`,
   })
 
   if (error) {
-    return { success: false, error: 'INTERNAL_ERROR' }
+    return { success: false, error: 'Something went wrong. Please try again later.' }
   }
 
   return { success: true }

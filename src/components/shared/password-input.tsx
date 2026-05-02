@@ -26,6 +26,7 @@ const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
           <InputGroupButton
             type="button"
             aria-label={visible ? 'Hide password' : 'Show password'}
+            aria-pressed={visible}
             onClick={() => setVisible((v) => !v)}
           >
             {visible ? (

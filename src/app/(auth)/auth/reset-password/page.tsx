@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -25,8 +25,6 @@ const schema = z
 
 type FormValues = z.infer<typeof schema>
 
-const supabase = createClient()
-
 const RECOVERY_TIMEOUT_MS = 8000
 
 export default function ResetPasswordPage() {
@@ -41,6 +39,7 @@ export default function ResetPasswordPage() {
   } = useForm<FormValues>({ resolver: zodResolver(schema) })
 
   useEffect(() => {
+    const supabase = createClient()
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
         setReady(true)
@@ -56,6 +55,7 @@ export default function ResetPasswordPage() {
   }, [])
 
   async function onSubmit(values: FormValues) {
+    const supabase = createClient()
     const { error } = await supabase.auth.updateUser({ password: values.password })
     if (error) {
       toast.error(error.message)

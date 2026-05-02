@@ -80,8 +80,9 @@ function getInitial(value: string | null | undefined): string {
 export function AppSidebar({ role, user }: Props) {
   const pathname = usePathname()
   const items = navItems[role]
-  const firstName = user.user_metadata?.first_name as string | undefined
-  const lastName = user.user_metadata?.last_name as string | undefined
+  const meta = user.user_metadata ?? {}
+  const firstName = typeof meta.first_name === 'string' ? meta.first_name : undefined
+  const lastName = typeof meta.last_name === 'string' ? meta.last_name : undefined
   const displayName = firstName ? `${firstName} ${lastName ?? ''}`.trim() : user.email ?? ''
   const avatar = getInitial(firstName || user.email)
 

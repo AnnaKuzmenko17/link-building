@@ -21,9 +21,10 @@ interface Props<T> {
   columns: ColumnDef<T>[]
   data: T[]
   isLoading?: boolean
+  onRowClick?: (row: T) => void
 }
 
-export function DataTable<T>({ columns, data, isLoading }: Props<T>) {
+export function DataTable<T>({ columns, data, isLoading, onRowClick }: Props<T>) {
   const table = useReactTable({
     data,
     columns,
@@ -62,15 +63,32 @@ export function DataTable<T>({ columns, data, isLoading }: Props<T>) {
               </TableCell>
             </TableRow>
           ) : (
-            table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))
+            table.getRowModel().rows.map((row) => {
+              function handleRowClick() {
+                onRowClick?.(row.original)
+              }
+              function handleRowKeyDown(e: React.KeyboardEvent) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  onRowClick?.(row.original)
+                }
+              }
+              return (
+                <TableRow
+                  key={row.id}
+                  onClick={onRowClick ? handleRowClick : undefined}
+                  onKeyDown={onRowClick ? handleRowKeyDown : undefined}
+                  tabIndex={onRowClick ? 0 : undefined}
+                  className={onRowClick ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring' : undefined}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              )
+            })
           )}
         </TableBody>
       </Table>

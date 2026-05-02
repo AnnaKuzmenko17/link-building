@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { requireSession } from '@/lib/auth/get-session'
-import { getMetricsForRole } from '@/lib/queries/dashboard-metrics'
+import { getMetricsForRole } from '@/lib/data/metrics'
 import { PageHeader } from '@/components/shared/page-header'
 import { MetricsGrid, MetricsGridSkeleton } from '@/components/shared/metrics-grid'
 import type { Role } from '@/types'

@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -21,8 +22,27 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
+function readHashOnLoad(): string | null {
+  if (typeof window === 'undefined') return null
+  const hash = window.location.hash
+  if (!hash) return null
+  const params = new URLSearchParams(hash.slice(1))
+  if (params.get('error')) {
+    const description = params.get('error_description')?.replace(/\+/g, ' ') ?? 'This link is invalid or has expired.'
+    window.history.replaceState(null, '', window.location.pathname)
+    return description
+  }
+  const type = params.get('type')
+  if (type === 'invite' || type === 'signup' || type === 'recovery') {
+    window.location.replace(`/auth/set-password${hash}`)
+  }
+  return null
+}
+
 export default function LoginPage() {
   const router = useRouter()
+  const [hashError] = useState<string | null>(readHashOnLoad)
+
   const {
     register,
     handleSubmit,
@@ -36,6 +56,23 @@ export default function LoginPage() {
       return
     }
     router.push(`/dashboard/${result.role}`)
+  }
+
+  if (hashError) {
+    return (
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <Logo className="mb-2" />
+          <CardTitle>Link expired</CardTitle>
+          <CardDescription>{hashError}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            Ask an admin or manager to send you a new invite.
+          </p>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
