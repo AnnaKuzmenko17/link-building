@@ -33,7 +33,7 @@ export function MetricsGrid({ metrics }: Props) {
   )
 }
 
-export function MetricsGridSkeleton({ count }: { count: 2 | 3 }) {
+export function MetricsGridSkeleton({ count }: { count: number }) {
   return (
     <div className={cn('grid gap-4', gridCols[count])}>
       {Array.from({ length: count }).map((_, i) => (

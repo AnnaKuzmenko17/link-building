@@ -6,5 +6,7 @@ function isRole(r: unknown): r is Role {
 }
 
 export function resolveRole(role: unknown): Role {
-  return isRole(role) ? role : 'client'
+  if (isRole(role)) return role
+  console.warn('[resolveRole] unknown role value:', role, '— defaulting to client')
+  return 'client'
 }

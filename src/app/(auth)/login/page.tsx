@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -22,26 +22,25 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
-function readHashOnLoad(): string | null {
-  if (typeof window === 'undefined') return null
-  const hash = window.location.hash
-  if (!hash) return null
-  const params = new URLSearchParams(hash.slice(1))
-  if (params.get('error')) {
-    const description = params.get('error_description')?.replace(/\+/g, ' ') ?? 'This link is invalid or has expired.'
-    window.history.replaceState(null, '', window.location.pathname)
-    return description
-  }
-  const type = params.get('type')
-  if (type === 'invite' || type === 'signup' || type === 'recovery') {
-    window.location.replace(`/auth/set-password${hash}`)
-  }
-  return null
-}
-
 export default function LoginPage() {
   const router = useRouter()
-  const [hashError] = useState<string | null>(readHashOnLoad)
+  const [hashError, setHashError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const hash = window.location.hash
+    if (!hash) return
+    const params = new URLSearchParams(hash.slice(1))
+    if (params.get('error')) {
+      const description = params.get('error_description')?.replace(/\+/g, ' ') ?? 'This link is invalid or has expired.'
+      window.history.replaceState(null, '', window.location.pathname)
+      setHashError(description)
+      return
+    }
+    const type = params.get('type')
+    if (type === 'invite' || type === 'signup' || type === 'recovery') {
+      window.location.replace(`/auth/set-password${hash}`)
+    }
+  }, [])
 
   const {
     register,

@@ -104,6 +104,7 @@ export function EditProfileSheet({ open, onOpenChange, profile }: Props) {
             <Input
               id="profile_email"
               type="email"
+              autoComplete="email"
               aria-invalid={!!errors.email}
               aria-describedby={errors.email ? 'profile-email-error' : undefined}
               {...register('email')}

@@ -74,7 +74,7 @@ export async function editUserAction(input: {
   }
 
   const { error } = await updateUserProfile(adminClient, targetId, { first_name, last_name, email, role: role as Role })
-  if (error) return { success: false, error: error.message }
+  if (error) return { success: false, error: 'Failed to update user. Please try again.' }
 
   await adminClient.auth.admin.updateUserById(targetId, {
     email,

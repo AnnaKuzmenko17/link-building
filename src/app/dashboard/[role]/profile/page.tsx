@@ -3,9 +3,8 @@ import { requireSession } from '@/lib/auth/get-session'
 import { createClient } from '@/lib/supabase/server'
 import { getUserById } from '@/lib/data/users'
 import { PageHeader } from '@/components/shared/page-header'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ProfileActions } from './profile-actions'
-import { capitalize } from '@/lib/utils'
 
 export default async function ProfilePage() {
   const { user } = await requireSession()
@@ -22,6 +21,9 @@ export default async function ProfilePage() {
       />
 
       <Card>
+        <CardHeader>
+          <CardTitle>Personal Information</CardTitle>
+        </CardHeader>
         <CardContent>
           <dl className="grid grid-cols-[auto_1fr] gap-x-8 gap-y-3 text-sm">
             <dt className="text-muted-foreground">First Name</dt>
@@ -34,7 +36,7 @@ export default async function ProfilePage() {
             <dd>{profile.email}</dd>
 
             <dt className="text-muted-foreground">Role</dt>
-            <dd>{capitalize(profile.role)}</dd>
+            <dd className="capitalize">{profile.role}</dd>
           </dl>
         </CardContent>
       </Card>

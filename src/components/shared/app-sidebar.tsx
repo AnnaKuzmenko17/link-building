@@ -113,7 +113,7 @@ export function AppSidebar({ role, user }: Props) {
       </SidebarContent>
 
       <SidebarFooter className="p-4">
-        <Link href={`/dashboard/${role}/profile`} className="flex items-center gap-3 rounded-md hover:bg-sidebar-accent transition-colors p-1 -mx-1">
+        <Link href={`/dashboard/${role}/profile`} className="flex items-center gap-3 rounded-md hover:bg-sidebar-accent transition-colors p-1 -mx-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
             {avatar}
           </div>

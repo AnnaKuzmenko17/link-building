@@ -76,6 +76,7 @@ export function DataTable<T>({ columns, data, isLoading, onRowClick }: Props<T>)
               return (
                 <TableRow
                   key={row.id}
+                  role={onRowClick ? 'button' : undefined}
                   onClick={onRowClick ? handleRowClick : undefined}
                   onKeyDown={onRowClick ? handleRowKeyDown : undefined}
                   tabIndex={onRowClick ? 0 : undefined}

@@ -47,7 +47,7 @@ export async function updateProfileAction(input: {
     first_name,
     last_name,
     email,
-    role: profile.role as Role,
+    role: profile.role,
   })
   if (error) return { success: false, error: 'Failed to update profile. Please try again.' }
 
@@ -83,10 +83,14 @@ export async function changePasswordAction(input: {
 
   const { currentPassword, newPassword } = parsed.data
 
+  if (!user.email) {
+    return { success: false, error: 'Unable to verify password. Please log in again.' }
+  }
+
   const supabase = await createClient()
 
   const { error: signInError } = await supabase.auth.signInWithPassword({
-    email: user.email!,
+    email: user.email,
     password: currentPassword,
   })
   if (signInError) {

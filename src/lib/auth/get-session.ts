@@ -10,6 +10,8 @@ export interface AuthSession {
   role: Role
 }
 
+// cache() deduplicates calls within a single Server Component render tree.
+// It has no effect inside Server Actions (each action is an independent request).
 export const requireSession = cache(async (): Promise<AuthSession> => {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

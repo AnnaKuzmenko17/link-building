@@ -123,6 +123,7 @@ export function EditUserSheet({ open, onOpenChange, user, viewerRole }: Props) {
             <Input
               id="email"
               type="email"
+              autoComplete="off"
               aria-invalid={!!errors.email}
               aria-describedby={errors.email ? 'edit-email-error' : undefined}
               {...register('email')}
