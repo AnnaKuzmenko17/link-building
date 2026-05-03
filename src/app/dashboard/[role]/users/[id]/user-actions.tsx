@@ -35,17 +35,13 @@ export function UserActions({ targetUser, viewerRole, currentUserId, activeManag
 
   const [editOpen, setEditOpen] = useState(false)
   const [resendOpen, setResendOpen] = useState(false)
-  const [resendLoading, setResendLoading] = useState(false)
-  const [disableLoading, setDisableLoading] = useState(false)
   const [simpleDisableOpen, setSimpleDisableOpen] = useState(false)
-  const [simpleDisableLoading, setSimpleDisableLoading] = useState(false)
   const [sourcerDisableOpen, setSourcerDisableOpen] = useState(false)
-  const [sourcerDisableLoading, setSourcerDisableLoading] = useState(false)
   const [reassignOpen, setReassignOpen] = useState(false)
   const [reassignData, setReassignData] = useState<ReassignData | null>(null)
   const [activateOpen, setActivateOpen] = useState(false)
-  const [activateLoading, setActivateLoading] = useState(false)
   const [assignManagerOpen, setAssignManagerOpen] = useState(false)
+  const [pending, setPending] = useState<string | null>(null)
 
   const isAdmin = viewerRole === 'admin'
   const isManager = viewerRole === 'manager'
@@ -63,9 +59,9 @@ export function UserActions({ targetUser, viewerRole, currentUserId, activeManag
   const canAssignManager = isAdmin && targetUser.role === 'client'
 
   async function handleResendConfirm() {
-    setResendLoading(true)
+    setPending('resend')
     const result = await resendInviteAction(targetUser.id)
-    setResendLoading(false)
+    setPending(null)
     if (!result.success) {
       toast.error(result.error)
       return
@@ -75,9 +71,9 @@ export function UserActions({ targetUser, viewerRole, currentUserId, activeManag
   }
 
   async function handleDisableClick() {
-    setDisableLoading(true)
+    setPending('disable')
     const check = await getDisablePreCheckAction(targetUser.id)
-    setDisableLoading(false)
+    setPending(null)
 
     if ('success' in check && !check.success) {
       toast.error(check.error)
@@ -97,9 +93,9 @@ export function UserActions({ targetUser, viewerRole, currentUserId, activeManag
   }
 
   async function handleSimpleDisableConfirm() {
-    setSimpleDisableLoading(true)
+    setPending('simpleDisable')
     const result = await disableUserAction(targetUser.id)
-    setSimpleDisableLoading(false)
+    setPending(null)
     if (!result.success) {
       toast.error(result.error)
       return
@@ -110,9 +106,9 @@ export function UserActions({ targetUser, viewerRole, currentUserId, activeManag
   }
 
   async function handleSourcerDisableConfirm() {
-    setSourcerDisableLoading(true)
+    setPending('sourcerDisable')
     const result = await disableSourcerAction(targetUser.id)
-    setSourcerDisableLoading(false)
+    setPending(null)
     if (!result.success) {
       toast.error(result.error)
       return
@@ -123,9 +119,9 @@ export function UserActions({ targetUser, viewerRole, currentUserId, activeManag
   }
 
   async function handleActivateConfirm() {
-    setActivateLoading(true)
+    setPending('activate')
     const result = await activateUserAction(targetUser.id)
-    setActivateLoading(false)
+    setPending(null)
     if (!result.success) {
       toast.error(result.error)
       return
@@ -144,8 +140,8 @@ export function UserActions({ targetUser, viewerRole, currentUserId, activeManag
         <Button variant="outline" onClick={() => setResendOpen(true)}>Resend Invite</Button>
       )}
       {canDisable && (
-        <Button variant="destructive" disabled={disableLoading} onClick={handleDisableClick}>
-          {disableLoading ? 'Checking…' : 'Disable'}
+        <Button variant="destructive" disabled={pending === 'disable'} onClick={handleDisableClick}>
+          {pending === 'disable' ? 'Checking…' : 'Disable'}
         </Button>
       )}
       {canActivate && (
@@ -169,7 +165,7 @@ export function UserActions({ targetUser, viewerRole, currentUserId, activeManag
         description={`Resend the invitation email to ${targetUser.email}?`}
         confirmLabel="Resend"
         onConfirm={handleResendConfirm}
-        isLoading={resendLoading}
+        isLoading={pending === 'resend'}
       />
 
       <ConfirmDialog
@@ -180,7 +176,7 @@ export function UserActions({ targetUser, viewerRole, currentUserId, activeManag
         confirmLabel="Disable"
         variant="destructive"
         onConfirm={handleSimpleDisableConfirm}
-        isLoading={simpleDisableLoading}
+        isLoading={pending === 'simpleDisable'}
       />
 
       <ConfirmDialog
@@ -191,7 +187,7 @@ export function UserActions({ targetUser, viewerRole, currentUserId, activeManag
         confirmLabel="Disable"
         variant="destructive"
         onConfirm={handleSourcerDisableConfirm}
-        isLoading={sourcerDisableLoading}
+        isLoading={pending === 'sourcerDisable'}
       />
 
       {reassignData && (
@@ -211,7 +207,7 @@ export function UserActions({ targetUser, viewerRole, currentUserId, activeManag
         description={`Activate ${targetUser.first_name} ${targetUser.last_name}'s account?`}
         confirmLabel="Activate"
         onConfirm={handleActivateConfirm}
-        isLoading={activateLoading}
+        isLoading={pending === 'activate'}
       />
 
       <AssignManagerDialog

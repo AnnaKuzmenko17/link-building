@@ -10,6 +10,7 @@ import {
   UsersIcon,
   WalletIcon,
   ClipboardListIcon,
+  TagIcon,
   type LucideIcon,
 } from 'lucide-react'
 import {
@@ -61,6 +62,7 @@ const navItems: Record<Role, NavItem[]> = {
   admin: [
     { label: 'Orders', href: '/dashboard/admin/orders', icon: ClipboardListIcon },
     { label: 'Sites', href: '/dashboard/admin/sites', icon: GlobeIcon },
+    { label: 'Categories', href: '/dashboard/admin/categories', icon: TagIcon },
     { label: 'Users', href: '/dashboard/admin/users', icon: UsersIcon },
     { label: 'Invoices', href: '/dashboard/admin/invoices', icon: FileTextIcon },
     { label: 'Earnings', href: '/dashboard/admin/earnings', icon: WalletIcon },

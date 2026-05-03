@@ -3,8 +3,7 @@ import { requireSession } from '@/lib/auth/get-session'
 import { createClient } from '@/lib/supabase/server'
 import { getUserList, getActiveManagers } from '@/lib/data/users'
 import { PageHeader } from '@/components/shared/page-header'
-import { UsersFilterBar } from './users-filter-bar'
-import { UsersTable } from './users-columns'
+import { UsersClient } from './users-client'
 import { InviteUserButton } from './invite-button'
 import type { Role } from '@/types'
 
@@ -45,8 +44,11 @@ export default async function UsersPage({ params, searchParams }: Props) {
           />
         }
       />
-      <UsersFilterBar defaultValues={{ role: filterRole, status, search }} />
-      <UsersTable data={users} basePath={basePath} />
+      <UsersClient
+        users={users}
+        basePath={basePath}
+        defaultFilters={{ role: filterRole, status, search }}
+      />
     </>
   )
 }

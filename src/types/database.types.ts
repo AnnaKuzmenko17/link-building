@@ -50,6 +50,35 @@ export type Database = {
           },
         ]
       }
+      categories: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       change_requests: {
         Row: {
           comment: string
@@ -329,30 +358,115 @@ export type Database = {
       }
       sites: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
+          category_id: string | null
+          contact_info: string | null
+          countries: string[]
           created_at: string
+          created_by: string | null
+          description: string | null
+          domain: string
+          dr: number
           id: string
+          keywords_relevance: string | null
+          languages: string[]
+          link_type: Database["public"]["Enums"]["link_type"]
+          needs_changes_at: string | null
+          needs_changes_by: string | null
+          organic_keywords_count: number
+          organic_traffic_count: number
+          price: number
+          requirements: string | null
           sourcer_id: string | null
+          sourcer_notes: string | null
           status: Database["public"]["Enums"]["site_status"]
+          top_countries: string
           updated_at: string
-          url: string
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          category_id?: string | null
+          contact_info?: string | null
+          countries?: string[]
           created_at?: string
+          created_by?: string | null
+          description?: string | null
+          domain: string
+          dr?: number
           id?: string
+          keywords_relevance?: string | null
+          languages?: string[]
+          link_type?: Database["public"]["Enums"]["link_type"]
+          needs_changes_at?: string | null
+          needs_changes_by?: string | null
+          organic_keywords_count?: number
+          organic_traffic_count?: number
+          price?: number
+          requirements?: string | null
           sourcer_id?: string | null
+          sourcer_notes?: string | null
           status?: Database["public"]["Enums"]["site_status"]
+          top_countries?: string
           updated_at?: string
-          url: string
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          category_id?: string | null
+          contact_info?: string | null
+          countries?: string[]
           created_at?: string
+          created_by?: string | null
+          description?: string | null
+          domain?: string
+          dr?: number
           id?: string
+          keywords_relevance?: string | null
+          languages?: string[]
+          link_type?: Database["public"]["Enums"]["link_type"]
+          needs_changes_at?: string | null
+          needs_changes_by?: string | null
+          organic_keywords_count?: number
+          organic_traffic_count?: number
+          price?: number
+          requirements?: string | null
           sourcer_id?: string | null
+          sourcer_notes?: string | null
           status?: Database["public"]["Enums"]["site_status"]
+          top_countries?: string
           updated_at?: string
-          url?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "sites_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sites_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sites_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sites_needs_changes_by_fkey"
+            columns: ["needs_changes_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "sites_sourcer_id_fkey"
             columns: ["sourcer_id"]
@@ -412,10 +526,12 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["role"]
       }
+      is_chat_participant: { Args: { p_chat_id: string }; Returns: boolean }
     }
     Enums: {
       chat_category: "support" | "sales" | "general"
       invoice_status: "draft" | "sent" | "paid"
+      link_type: "dofollow" | "nofollow" | "sponsored" | "ugc"
       message_status: "unread" | "read"
       order_status:
         | "new"
@@ -427,7 +543,7 @@ export type Database = {
         | "completed"
         | "canceled"
       role: "client" | "manager" | "copywriter" | "sourcer" | "admin"
-      site_status: "pending" | "active" | "archived"
+      site_status: "pending" | "active" | "archived" | "needs_changes"
       user_status: "pending" | "active" | "disabled"
     }
     CompositeTypes: {
@@ -558,6 +674,7 @@ export const Constants = {
     Enums: {
       chat_category: ["support", "sales", "general"],
       invoice_status: ["draft", "sent", "paid"],
+      link_type: ["dofollow", "nofollow", "sponsored", "ugc"],
       message_status: ["unread", "read"],
       order_status: [
         "new",
@@ -570,7 +687,7 @@ export const Constants = {
         "canceled",
       ],
       role: ["client", "manager", "copywriter", "sourcer", "admin"],
-      site_status: ["pending", "active", "archived"],
+      site_status: ["pending", "active", "archived", "needs_changes"],
       user_status: ["pending", "active", "disabled"],
     },
   },

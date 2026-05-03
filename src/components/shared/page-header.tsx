@@ -1,6 +1,5 @@
-import Link from 'next/link'
 import type { ReactNode } from 'react'
-import { ArrowLeftIcon } from 'lucide-react'
+import { BackButton } from './back-button'
 
 interface Props {
   title: string
@@ -13,13 +12,7 @@ export function PageHeader({ title, backHref, action }: Props) {
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex items-center gap-3 min-w-0">
         {backHref && (
-          <Link
-            href={backHref}
-            className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
-            aria-label="Go back"
-          >
-            <ArrowLeftIcon className="size-5" />
-          </Link>
+          <BackButton fallbackHref={backHref} />
         )}
         <h1 className="text-2xl font-semibold tracking-tight truncate min-w-0">{title}</h1>
       </div>

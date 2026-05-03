@@ -47,10 +47,12 @@ export function UsersFilterBar({ defaultValues }: Props) {
 
   function pushParams(updates: Record<string, string | undefined>) {
     const params = new URLSearchParams()
-    const merged = { role: defaultValues.role, status: defaultValues.status, search: defaultValues.search, ...updates }
-    if (merged.role) params.set('role', merged.role)
-    if (merged.status) params.set('status', merged.status)
-    if (merged.search) params.set('search', merged.search)
+    const role = updates.role ?? (searchParams.get('role') || undefined)
+    const status = updates.status ?? (searchParams.get('status') || undefined)
+    const search = updates.search ?? (searchParams.get('search') || undefined)
+    if (role) params.set('role', role)
+    if (status) params.set('status', status)
+    if (search) params.set('search', search)
     router.replace(`${pathname}?${params.toString()}`, { scroll: false })
   }
 

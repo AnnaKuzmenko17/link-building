@@ -63,10 +63,10 @@ async function getCopywriterMetrics(supabase: Client, userId: string): Promise<M
 async function getSourcerMetrics(supabase: Client, userId: string): Promise<MetricCard[]> {
   const [{ count: activeSites }, { count: pendingSites }] = await Promise.all([
     supabase.from('sites').select('*', { count: 'exact', head: true })
-      .eq('sourcer_id', userId)
+      .eq('created_by', userId)
       .eq('status', 'active'),
     supabase.from('sites').select('*', { count: 'exact', head: true })
-      .eq('sourcer_id', userId)
+      .eq('created_by', userId)
       .eq('status', 'pending'),
   ])
 

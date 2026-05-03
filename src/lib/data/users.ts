@@ -13,7 +13,7 @@ export type UserWithManager = User & {
 export type ActiveOrderForReassign = {
   id: string
   publish_month: string
-  site: { url: string }
+  site: { domain: string }
 }
 
 export type ActiveCopywriter = Pick<User, 'id' | 'first_name' | 'last_name'>
@@ -126,7 +126,7 @@ export async function getActiveOrdersForCopywriter(
 ): Promise<ActiveOrderForReassign[]> {
   const { data } = await supabase
     .from('orders')
-    .select('id, publish_month, site:sites!site_id(url)')
+    .select('id, publish_month, site:sites!site_id(domain)')
     .eq('copywriter_id', copywriterId)
     .in('status', ACTIVE_ORDER_STATUSES)
 

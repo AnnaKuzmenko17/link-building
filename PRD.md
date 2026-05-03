@@ -273,51 +273,233 @@ chats ──< messages
 
 ### 5.4 Sites
 
-**Screens:** All Sites, View Site, Add Site, Edit Site, Archive Site, Unarchive Site
+**Screens:** All Sites, View Site, Create Site, Edit Site, Change Status, All Categories, Create Category, Edit Category
 
 #### Permission Matrix
 
 | Action | sourcer | manager | admin |
 |---|---|---|---|
-| View | Own sites, status ≠ `archived` | All | All |
-| Filter | Own sites, status ≠ `archived` | All | All |
+| View | Own sites + status ≠ `archived` | All | All |
+| Filter | Own sites + status ≠ `archived` | All | All |
 | Create | ✅ | ❌ | ❌ |
-| Edit | Own sites, status ≠ `archived` | ❌ | ✅ |
-| Archive / Unarchive | ❌ | ❌ | ✅ |
+| Edit | Own sites + status ≠ `archived` | ❌ | ✅ all |
+| Change status | ❌ | ❌ | ✅ |
+| Add to Cart | ❌ | ❌ | ❌ (client only) |
+| Manage Categories | ❌ | ❌ | ✅ |
 
-#### 5.4.1 View Sites
+---
 
-- Paginated list of sites based on the user's permission scope.
-- Clicking a site opens the **View Site** screen.
+#### Entities
+
+**Site**
+
+| Field | Type | Validation | Notes |
+|---|---|---|---|
+| `id` | string | required, unique | |
+| `created_at` | date | required | |
+| `created_by` | → users | required | |
+| `sourcer_id` | → users | optional | Set to `null` when sourcer is disabled |
+| `domain` | string | required, unique, URL format | e.g. `name.com` |
+| `dr` | number | required | Domain rating |
+| `category_id` | → categories | required | |
+| `top_countries` | string | required | |
+| `countries` | Country[] | required, min 1 | |
+| `languages` | Language[] | required, min 1 | |
+| `price` | number | required | USD, 1 = $1 |
+| `status` | SiteStatus | required | |
+| `requirements` | string | optional | Site content requirements |
+| `description` | string | optional | |
+| `sourcer_notes` | string | optional | |
+| `contact_info` | string | optional | Site communication info |
+| `link_type` | LinkType | required | Default: `dofollow` |
+| `keywords_relevance` | string | optional | |
+| `organic_keywords_count` | number | required | Default: `0` |
+| `organic_traffic_count` | number | required | Default: `0` |
+| `needs_changes_by` | → users | conditional | Required if `status = needs_changes` |
+| `needs_changes_at` | date | conditional | Required if `status = needs_changes` |
+| `approved_by` | → users | conditional | Required if `status = active` |
+| `approved_at` | date | conditional | Required if `status = active` |
+
+**Category**
+
+| Field | Type | Validation |
+|---|---|---|
+| `id` | string | required, unique |
+| `created_at` | date | required |
+| `created_by` | → users | required |
+| `name` | string | required, unique |
+
+**Enums**
+
+`SiteStatus`: `pending` | `active` | `needs_changes` | `archived`
+
+`LinkType`: `dofollow` | `nofollow` | `sponsored` | `ugc`
+
+`Country`: `Ukraine` | `Germany` | `Poland` | `USA` | `UK` | `France` | `Spain` | `Italy` | `Netherlands` | `Czech Republic`
+
+`Language`: `English` | `German` | `Spanish` | `Portuguese` | `French`
+
+---
+
+#### 5.4.1 All Sites screen
+
+Displays a paginated list of sites within the user's permission scope.
+
+**Columns visible to all roles with access:** Domain, DR, Category, Top Countries, Countries, Languages, Price, Status.
+
+**Status column** is visible to `sourcer` and `admin` only.
+
+**Action buttons per row:**
+
+| Button | Visible when |
+|---|---|
+| **Create** | `user.role = sourcer` (header-level button, not per-row) |
+| **Add to Cart** | `user.role = client` |
+| **Edit** | `user.role = admin` OR (`user.role = sourcer` AND `site.created_by = user.id` AND `site.status ≠ archived`) |
+| **Request Changes** | `user.role = admin` AND `site.status = pending` |
+| **Approve** | `user.role = admin` AND `site.status IN (pending, needs_changes)` |
+| **Archive** | `user.role = admin` AND `site.status ≠ archived` |
+| **Unarchive** | `user.role = admin` AND `site.status = archived` |
+
+---
 
 #### 5.4.2 Filter Sites
 
-- Filter by: status, URL search, sourcer (manager/admin only).
+| Field | Type | Notes |
+|---|---|---|
+| Search | string | Searches across: domain, keywords relevance, description |
+| Category | Category | |
+| Status | SiteStatus | |
+| Countries | Country[] | |
+| Language | Language | |
+| Link type | LinkType | |
+| Price from | number | |
+| Price to | number | |
 
-#### 5.4.3 Create Site
+---
 
-1. System displays the **Add Site** form.
-2. Sourcer fills in site details and submits.
-3. System validates data, creates the site, assigns `sourcer_id` to the creator, sets `status = pending`.
+#### 5.4.3 View Site screen
 
-#### 5.4.4 Edit Site
+**Fields visible to all roles with access:**
 
-1. User selects a site and clicks **Edit Site**.
-2. System displays the **Edit Site** form.
-3. User updates fields and clicks **Save**.
-4. System saves data and resets `status = pending`.
+Domain, DR, Category, Top Countries, Countries, Languages, Price.
 
-> Saving an edit resets the site to `pending` so it goes through admin approval again.
+**Conditionally visible fields:**
 
-#### 5.4.5 Archive Site
+| Field | Visible to | Condition |
+|---|---|---|
+| Status | `sourcer`, `admin` | always |
+| Needs Changes By | `admin` | only if `status = needs_changes` |
+| Needs Changes At | `admin` | only if `status = needs_changes` |
+| Approved By | `admin` | only if `status = active` |
+| Approved At | `admin` | only if `status = active` |
+| Requirements | `sourcer`, `manager`, `admin` | always |
+| Description | `sourcer`, `manager`, `admin` | always |
+| Sourcer Notes | `sourcer`, `admin` | always |
+| Contact Info | `sourcer`, `manager`, `admin` | always |
+| Link Type | all | always |
+| Keywords Relevance | all | always |
+| Organic Keywords Count | all | always |
+| Organic Traffic Count | all | always |
+| Created By | `admin` | always |
 
-1. Admin clicks **Archive Site** → confirmation screen.
-2. On confirm: set `status = archived`.
+**Action buttons** follow the same visibility rules as the All Sites screen.
 
-#### 5.4.6 Unarchive Site
+---
 
-1. Admin clicks **Unarchive Site** → confirmation screen.
-2. On confirm: set `status = active`.
+#### 5.4.4 Create Site
+
+Available to `sourcer` only. The sourcer becomes `created_by` and `sourcer_id` on the new record. On save: `status` is set to `pending`.
+
+| Field | Type | Validation |
+|---|---|---|
+| Domain | string | required, unique, URL format |
+| DR | number | required |
+| Category | Category | required |
+| Top Countries | string | required |
+| Countries | Country[] | required, min 1 |
+| Languages | Language[] | required, min 1 |
+| Price | number | required |
+| Requirements | string | optional |
+| Description | string | optional |
+| Sourcer Notes | string | optional |
+| Contact Info | string | optional |
+| Link Type | LinkType | required, default `dofollow` |
+| Keywords Relevance | string | optional |
+| Organic Keywords Count | number | required, default `0` |
+| Organic Traffic Count | number | required, default `0` |
+
+---
+
+#### 5.4.5 Edit Site
+
+Available to `admin` (any site) and `sourcer` (own sites where `status ≠ archived`).
+
+Same fields as Create Site. On save by sourcer: `status` is reset to `pending` so the site goes through admin re-approval.
+
+> Show a notice to the user: *"Saving will reset this site to Pending for re-approval."*
+
+---
+
+#### 5.4.6 Change Status
+
+Admin only. All status changes go through a confirmation dialog before the action is applied.
+
+**Status transitions and side effects:**
+
+| Action | Transition | Side effects |
+|---|---|---|
+| Request Changes | `pending` → `needs_changes` | Sets `needs_changes_by` and `needs_changes_at` |
+| Approve | `pending` / `needs_changes` → `active` | Sets `approved_by` and `approved_at`. Clears `needs_changes_by` and `needs_changes_at` if previously set |
+| Archive | any → `archived` | None |
+| Unarchive | `archived` → `pending` | Clears `approved_by`, `approved_at`, `needs_changes_by`, `needs_changes_at` |
+
+**Action button visibility per site status:**
+
+| Current Status | Available Actions |
+|---|---|
+| `pending` | Request Changes, Approve, Archive |
+| `needs_changes` | Approve, Archive |
+| `active` | Archive |
+| `archived` | Unarchive |
+
+##### 5.4.6.1 Request Changes
+
+1. Admin clicks **Request Changes** on a site with `status = pending`.
+2. System displays a confirmation dialog.
+3. Admin clicks **Confirm**.
+4. System sets `status = needs_changes`, sets `needs_changes_by` to the current admin user, sets `needs_changes_at` to the current timestamp.
+
+##### 5.4.6.2 Approve Site
+
+1. Admin clicks **Approve** on a site with `status = pending` or `needs_changes`.
+2. System displays a confirmation dialog.
+3. Admin clicks **Confirm**.
+4. System sets `status = active`, sets `approved_by` to the current admin user, sets `approved_at` to the current timestamp. If the site previously had `needs_changes_by` or `needs_changes_at` set, those fields are cleared.
+
+##### 5.4.6.3 Archive Site
+
+1. Admin clicks **Archive** on a site with any status except `archived`.
+2. System displays a confirmation dialog.
+3. Admin clicks **Confirm**.
+4. System sets `status = archived`.
+
+##### 5.4.6.4 Unarchive Site
+
+1. Admin clicks **Unarchive** on a site with `status = archived`.
+2. System displays a confirmation dialog.
+3. Admin clicks **Confirm**.
+4. System sets `status = pending` and clears `approved_by`, `approved_at`, `needs_changes_by`, `needs_changes_at`.
+
+---
+
+#### 5.4.7 All Categories screen
+
+Admin only. Displays a list of all categories. Header-level **Create Category** button. **Edit** button per row.
+
+#### 5.4.8 Create Category / Edit Category
+
+Admin only. Single field: **Name** (required, unique). **Save** and **Cancel** buttons.
 
 ---
 

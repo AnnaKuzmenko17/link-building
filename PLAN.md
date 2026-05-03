@@ -316,39 +316,76 @@ Build these reusable components in `components/ui/` or `components/shared/`:
 
 ## Phase 7 — Sites
 
+> **Database migration required before implementation.** The `sites` table must be replaced and a new `categories` table added. See Step 7.0.
+
+### Step 7.0 — Database migration
+
+Run migrations in the Supabase SQL editor:
+
+1. **Add new enums:**
+   - `site_status`: replace with `'pending' | 'active' | 'needs_changes' | 'archived'`
+   - `link_type`: `'dofollow' | 'nofollow' | 'sponsored' | 'ugc'`
+
+2. **Create `categories` table:** `id`, `name` (unique), `created_by` → users, `created_at`.
+
+3. **Alter `sites` table** — replace `url` with `domain` (unique) and add all new columns:
+   `created_by` → users (required), `domain` (unique, not null), `dr` (int, not null), `category_id` → categories (not null), `top_countries` (text), `countries` (text[], not null), `languages` (text[], not null), `price` (numeric, not null), `requirements` (text, nullable), `description` (text, nullable), `sourcer_notes` (text, nullable), `contact_info` (text, nullable), `link_type` (link_type enum, default `dofollow`), `keywords_relevance` (text, nullable), `organic_keywords_count` (int, default 0), `organic_traffic_count` (int, default 0), `needs_changes_by` (→ users, nullable), `needs_changes_at` (timestamptz, nullable), `approved_by` (→ users, nullable), `approved_at` (timestamptz, nullable).
+
+4. **Update RLS on `sites`:**
+   - `admin`: full access.
+   - `manager`: read all.
+   - `sourcer`: read own sites (`created_by = auth.uid()`) where `status != 'archived'`; insert; update own sites where `status != 'archived'`.
+
+5. **RLS on `categories`:**
+   - `admin`: full read/write.
+   - All other roles: read-only.
+
+6. **Regenerate TypeScript types** (`supabase gen types typescript`) and update `src/types/database.types.ts` and `src/types/index.ts`.
+
 ### Step 7.1 — All Sites screen
 
 - Route: `app/dashboard/[role]/sites/page.tsx`
 - Roles: `sourcer`, `manager`, `admin`.
-- Use `<DataTable>` with columns: URL, sourcer, status, created date, actions.
-- Apply RLS-compatible filters: sourcer sees only own non-archived sites; manager/admin see all.
-- Filter controls: status, URL search, sourcer (manager/admin only).
+- Columns: Domain, DR, Category, Top Countries, Countries, Languages, Price. Status column visible to `sourcer` and `admin` only.
+- Filters: search (domain/description/keywords), category, status, countries, language, link type, price range.
+- Sourcer: sees only own non-archived sites. Header-level **Add Site** button.
+- Manager/Admin: see all sites.
 
 ### Step 7.2 — View Site screen
 
 - Route: `app/dashboard/[role]/sites/[id]/page.tsx`
-- Display all site fields and sourcer info.
-- Conditionally show action buttons: **Edit Site** (sourcer for own, admin for all), **Archive / Unarchive** (admin only).
+- Display all fields per visibility rules (see PRD 5.4.3).
+- Status, approval info, and needs-changes info conditionally shown.
+- Action buttons: **Edit** (sourcer own non-archived, admin all), **Request Changes** (admin, `status = pending`), **Approve** (admin, `status = pending|needs_changes`), **Archive** (admin, status ≠ `archived`), **Unarchive** (admin, `status = archived`).
+- All status-change actions go through `<ConfirmDialog>`.
 
-### Step 7.3 — Add Site flow
+### Step 7.3 — Create Site flow
 
 - Route: `app/dashboard/sourcer/sites/new/page.tsx`
-- Full-page form (not a dialog — sourcer's primary action).
-- Fields: URL, any other site metadata defined in the schema.
-- Server Action: validate data → insert site with `sourcer_id = auth.uid()`, `status = 'pending'`.
+- Full-page form. Sourcer only. Sets `created_by = auth.uid()`, `sourcer_id = auth.uid()`, `status = pending`.
+- Fields: all required and optional fields from the Site entity (see PRD 5.4.4).
 
 ### Step 7.4 — Edit Site flow
 
-- Trigger: **Edit Site** button.
-- Use shadcn/ui `<Sheet>` with pre-filled form.
-- Server Action: update site fields → reset `status = 'pending'`.
-- Show a notice to the user: *"Saving will reset this site to Pending for re-approval."*
+- Trigger: **Edit** button on site detail.
+- Full-page form (same layout as Create). Pre-filled with current values.
+- On save by sourcer: `status` resets to `pending`. Show notice: *"Saving will reset this site to Pending for re-approval."*
+- On save by admin: status is not reset.
 
-### Step 7.5 — Archive / Unarchive flow
+### Step 7.5 — Change Status flow (admin only)
 
-- Trigger: **Archive Site** or **Unarchive Site** button (admin only).
-- Show `<ConfirmDialog>` with appropriate message.
-- Server Action: update `status` accordingly.
+- All four status actions (Request Changes, Approve, Archive, Unarchive) use `<ConfirmDialog>`.
+- Server Actions enforce transition rules and side effects (see PRD 5.4.6).
+- `requestChangesAction`: `pending → needs_changes`, sets `needs_changes_by`, `needs_changes_at`.
+- `approveSiteAction`: `pending|needs_changes → active`, sets `approved_by`, `approved_at`, clears needs-changes fields.
+- `archiveSiteAction`: any → `archived`.
+- `unarchiveSiteAction`: `archived → pending`, clears all audit fields.
+
+### Step 7.6 — Categories management (admin only)
+
+- Route: `app/dashboard/admin/categories/page.tsx` — list with **Create Category** button and **Edit** per row.
+- Create/Edit via inline dialog or Sheet. Single **Name** field. Unique validation.
+- Server Actions: `createCategoryAction`, `updateCategoryAction`.
 
 ---
 
