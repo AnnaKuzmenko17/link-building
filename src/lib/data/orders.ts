@@ -1,11 +1,21 @@
 import type { SupabaseClient, PostgrestError } from '@supabase/supabase-js'
 import type { Database } from '@/types/database.types'
-import type { Order, Site, OrderStatus } from '@/types'
+import type { Order, Site, User, OrderStatus, ChangeRequest } from '@/types'
 
 type Client = SupabaseClient<Database>
 
 export type OrderWithSite = Order & {
   site: Pick<Site, 'id' | 'domain'>
+}
+
+export type OrderWithDetails = Order & {
+  site: Pick<Site, 'id' | 'domain'>
+  client: Pick<User, 'id' | 'first_name' | 'last_name'>
+  copywriter: Pick<User, 'id' | 'first_name' | 'last_name'> | null
+}
+
+export type OrderWithFullDetails = OrderWithDetails & {
+  change_requests: ChangeRequest[]
 }
 
 export async function getClientOrders(
@@ -94,6 +104,83 @@ export async function createChangeRequest(
     .update({ status: 'needs_changes' })
     .eq('id', orderId)
   return { error: statusError ?? null }
+}
+
+export async function getAllOrders(
+  supabase: Client,
+  filters: {
+    status?: string
+    clientId?: string
+    copywriterId?: string
+    publishMonth?: string
+  } = {},
+): Promise<OrderWithDetails[]> {
+  let query = supabase
+    .from('orders')
+    .select('*, site:sites(id, domain), client:users!client_id(id, first_name, last_name), copywriter:users!copywriter_id(id, first_name, last_name)')
+    .order('created_at', { ascending: false })
+
+  if (filters.status) query = query.eq('status', filters.status as OrderStatus)
+  if (filters.clientId) query = query.eq('client_id', filters.clientId)
+  if (filters.copywriterId) {
+    if (filters.copywriterId === '__unassigned__') {
+      query = query.is('copywriter_id', null)
+    } else {
+      query = query.eq('copywriter_id', filters.copywriterId)
+    }
+  }
+  if (filters.publishMonth) query = query.eq('publish_month', filters.publishMonth)
+
+  const { data } = await query
+  return (data ?? []) as unknown as OrderWithDetails[]
+}
+
+export async function getOrderById(
+  supabase: Client,
+  orderId: string,
+): Promise<OrderWithFullDetails | null> {
+  const { data } = await supabase
+    .from('orders')
+    .select('*, site:sites(id, domain), client:users!client_id(id, first_name, last_name), copywriter:users!copywriter_id(id, first_name, last_name), change_requests(*)')
+    .eq('id', orderId)
+    .maybeSingle()
+  return data as unknown as OrderWithFullDetails | null
+}
+
+export async function assignCopywriter(
+  supabase: Client,
+  orderId: string,
+  copywriterId: string,
+): Promise<{ error: PostgrestError | null }> {
+  const { error } = await supabase
+    .from('orders')
+    .update({ copywriter_id: copywriterId, status: 'in_progress' })
+    .eq('id', orderId)
+  return { error: error ?? null }
+}
+
+export async function reassignCopywriter(
+  supabase: Client,
+  orderId: string,
+  copywriterId: string,
+): Promise<{ error: PostgrestError | null }> {
+  const { error } = await supabase
+    .from('orders')
+    .update({ copywriter_id: copywriterId })
+    .eq('id', orderId)
+  return { error: error ?? null }
+}
+
+export async function publishOrder(
+  supabase: Client,
+  orderId: string,
+  publishedUrl: string,
+): Promise<{ error: PostgrestError | null }> {
+  const { error } = await supabase
+    .from('orders')
+    .update({ published_url: publishedUrl, status: 'published' })
+    .eq('id', orderId)
+  return { error: error ?? null }
 }
 
 export async function reassignOrder(
