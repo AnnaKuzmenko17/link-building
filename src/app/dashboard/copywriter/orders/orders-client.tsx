@@ -11,28 +11,26 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { DataTable } from '@/components/shared/data-table'
-import { buildOrderColumns } from './orders-columns'
-import type { OrderWithSite } from '@/lib/data/orders'
+import { buildCopywriterOrderColumns } from './orders-columns'
+import type { CopywriterOrder } from '@/lib/data/orders'
 import type { OrderStatus } from '@/types'
 
 interface Props {
-  orders: OrderWithSite[]
+  orders: CopywriterOrder[]
 }
 
 const STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
-  { value: 'new', label: 'New' },
   { value: 'in_progress', label: 'In Progress' },
   { value: 'content_sent', label: 'Content Sent' },
   { value: 'needs_changes', label: 'Needs Changes' },
   { value: 'content_approved', label: 'Content Approved' },
   { value: 'published', label: 'Published' },
   { value: 'completed', label: 'Completed' },
-  { value: 'canceled', label: 'Canceled' },
 ]
 
-const columns = buildOrderColumns()
+const columns = buildCopywriterOrderColumns()
 
-export function OrdersClient({ orders }: Props) {
+export function CopywriterOrdersClient({ orders }: Props) {
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [filterStatus, setFilterStatus] = useState('')
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { SlidersHorizontalIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -35,6 +36,7 @@ const STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
 ]
 
 export function ManagerOrdersClient({ orders, copywriters, clients, role }: Props) {
+  const [filtersOpen, setFiltersOpen] = useState(false)
   const [filterStatus, setFilterStatus] = useState('')
   const [filterClient, setFilterClient] = useState('')
   const [filterCopywriter, setFilterCopywriter] = useState('')
@@ -60,7 +62,7 @@ export function ManagerOrdersClient({ orders, copywriters, clients, role }: Prop
     })
   }, [orders, filterStatus, filterClient, filterCopywriter, filterMonth])
 
-  const hasFilters = filterStatus || filterClient || filterCopywriter || filterMonth
+  const activeCount = [filterStatus, filterClient, filterCopywriter, filterMonth].filter(Boolean).length
 
   function clearFilters() {
     setFilterStatus('')
@@ -71,66 +73,87 @@ export function ManagerOrdersClient({ orders, copywriters, clients, role }: Prop
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v ?? '')}>
-          <SelectTrigger className="w-44">
-            <SelectValue placeholder="All Statuses" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">All Statuses</SelectItem>
-            {STATUS_OPTIONS.map((s) => (
-              <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={filterClient} onValueChange={(v) => setFilterClient(v ?? '')}>
-          <SelectTrigger className="w-44">
-            <SelectValue placeholder="All Clients" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">All Clients</SelectItem>
-            {clients.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.first_name} {c.last_name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={filterCopywriter} onValueChange={(v) => setFilterCopywriter(v ?? '')}>
-          <SelectTrigger className="w-44">
-            <SelectValue placeholder="All Copywriters" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">All Copywriters</SelectItem>
-            <SelectItem value="__unassigned__">Unassigned</SelectItem>
-            {copywriters.map((cw) => (
-              <SelectItem key={cw.id} value={cw.id}>
-                {cw.first_name} {cw.last_name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={filterMonth} onValueChange={(v) => setFilterMonth(v ?? '')}>
-          <SelectTrigger className="w-44">
-            <SelectValue placeholder="All Months" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">All Months</SelectItem>
-            {publishMonths.map((m) => (
-              <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {hasFilters && (
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setFiltersOpen((v) => !v)}
+          aria-expanded={filtersOpen}
+          aria-controls="orders-filters"
+        >
+          <SlidersHorizontalIcon className="size-4" />
+          Filters
+          {activeCount > 0 && (
+            <span className="ml-1 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+              {activeCount}
+            </span>
+          )}
+        </Button>
+        {activeCount > 0 && (
           <Button variant="ghost" size="sm" onClick={clearFilters}>
-            Clear
+            Clear filters
           </Button>
         )}
       </div>
+
+      {filtersOpen && (
+        <div id="orders-filters" className="rounded-lg border p-4">
+          <div className="flex flex-wrap gap-3">
+            <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v ?? '')}>
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Statuses</SelectItem>
+                {STATUS_OPTIONS.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={filterClient} onValueChange={(v) => setFilterClient(v ?? '')}>
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="All Clients" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Clients</SelectItem>
+                {clients.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.first_name} {c.last_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={filterCopywriter} onValueChange={(v) => setFilterCopywriter(v ?? '')}>
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="All Copywriters" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Copywriters</SelectItem>
+                <SelectItem value="__unassigned__">Unassigned</SelectItem>
+                {copywriters.map((cw) => (
+                  <SelectItem key={cw.id} value={cw.id}>
+                    {cw.first_name} {cw.last_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={filterMonth} onValueChange={(v) => setFilterMonth(v ?? '')}>
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="All Months" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Months</SelectItem>
+                {publishMonths.map((m) => (
+                  <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
 
       <DataTable columns={columns} data={filtered} />
     </div>

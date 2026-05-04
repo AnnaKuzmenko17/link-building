@@ -15,6 +15,7 @@ export type OrderWithDetails = Order & {
 }
 
 export type OrderWithFullDetails = OrderWithDetails & {
+  site: Pick<Site, 'id' | 'domain' | 'dr' | 'category_id' | 'requirements' | 'description' | 'link_type' | 'languages'>
   change_requests: ChangeRequest[]
 }
 
@@ -141,7 +142,7 @@ export async function getOrderById(
 ): Promise<OrderWithFullDetails | null> {
   const { data } = await supabase
     .from('orders')
-    .select('*, site:sites(id, domain), client:users!client_id(id, first_name, last_name), copywriter:users!copywriter_id(id, first_name, last_name), change_requests(*)')
+    .select('*, site:sites(id, domain, dr, category_id, requirements, description, link_type, languages), client:users!client_id(id, first_name, last_name), copywriter:users!copywriter_id(id, first_name, last_name), change_requests(*)')
     .eq('id', orderId)
     .maybeSingle()
   return data as unknown as OrderWithFullDetails | null
@@ -179,6 +180,34 @@ export async function publishOrder(
   const { error } = await supabase
     .from('orders')
     .update({ published_url: publishedUrl, status: 'published' })
+    .eq('id', orderId)
+  return { error: error ?? null }
+}
+
+export type CopywriterOrder = OrderWithSite & {
+  change_requests: ChangeRequest[]
+}
+
+export async function getCopywriterOrders(
+  supabase: Client,
+  copywriterId: string,
+): Promise<CopywriterOrder[]> {
+  const { data } = await supabase
+    .from('orders')
+    .select('*, site:sites(id, domain), change_requests(*)')
+    .eq('copywriter_id', copywriterId)
+    .order('created_at', { ascending: false })
+  return (data ?? []) as unknown as CopywriterOrder[]
+}
+
+export async function saveOrderContent(
+  supabase: Client,
+  orderId: string,
+  content: string,
+): Promise<{ error: PostgrestError | null }> {
+  const { error } = await supabase
+    .from('orders')
+    .update({ content })
     .eq('id', orderId)
   return { error: error ?? null }
 }
