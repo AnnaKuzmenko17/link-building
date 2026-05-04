@@ -293,6 +293,7 @@ export type Database = {
           copywriter_id: string | null
           created_at: string
           id: string
+          order_number: number
           publish_month: string
           published_url: string | null
           site_id: string
@@ -307,6 +308,7 @@ export type Database = {
           copywriter_id?: string | null
           created_at?: string
           id?: string
+          order_number?: number
           publish_month: string
           published_url?: string | null
           site_id: string
@@ -321,6 +323,7 @@ export type Database = {
           copywriter_id?: string | null
           created_at?: string
           id?: string
+          order_number?: number
           publish_month?: string
           published_url?: string | null
           site_id?: string

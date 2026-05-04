@@ -109,8 +109,8 @@ export default async function InvoiceDetailPage({ params }: Props) {
               {invoice.invoice_items.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>{item.order.site.domain}</TableCell>
-                  <TableCell className="font-mono text-xs text-muted-foreground">
-                    {item.order.id.slice(0, 8)}…
+                  <TableCell>
+                    #{String(item.order.order_number).padStart(6, '0')}
                   </TableCell>
                   <TableCell className="text-right">${Number(item.amount).toFixed(2)}</TableCell>
                 </TableRow>

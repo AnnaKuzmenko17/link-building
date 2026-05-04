@@ -13,7 +13,7 @@ export type InvoiceWithItems = Invoice & {
   client: Pick<User, 'id' | 'first_name' | 'last_name' | 'email'>
   invoice_items: Array<
     InvoiceItem & {
-      order: Pick<Order, 'id'> & {
+      order: Pick<Order, 'id' | 'order_number'> & {
         site: Pick<Site, 'domain'>
       }
     }
@@ -46,7 +46,7 @@ export async function getInvoiceById(
 ): Promise<InvoiceWithItems | null> {
   let query = supabase
     .from('invoices')
-    .select('*, client:users!client_id(id, first_name, last_name, email), invoice_items(*, order:orders!order_id(id, site:sites!site_id(domain)))')
+    .select('*, client:users!client_id(id, first_name, last_name, email), invoice_items(*, order:orders!order_id(id, order_number, site:sites!site_id(domain)))')
     .eq('id', id)
 
   if (viewerRole === 'client') {

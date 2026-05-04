@@ -119,7 +119,7 @@ export function InvoicePDFDocument({ invoice }: Props) {
         {invoice.invoice_items.map((item) => (
           <View key={item.id} style={styles.tableRow}>
             <Text style={styles.colSite}>{item.order.site.domain}</Text>
-            <Text style={styles.colOrder}>{item.order.id.slice(0, 8)}…</Text>
+            <Text style={styles.colOrder}>#{String(item.order.order_number).padStart(6, '0')}</Text>
             <Text style={styles.colAmount}>${Number(item.amount).toFixed(2)}</Text>
           </View>
         ))}
