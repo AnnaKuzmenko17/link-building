@@ -122,12 +122,20 @@ export function InvoicesClient({ invoices, clients, role }: Props) {
 
             <DatePicker
               value={filterPeriodStart}
-              onChange={setFilterPeriodStart}
+              onChange={(v) => {
+                setFilterPeriodStart(v)
+                if (filterPeriodEnd && v > filterPeriodEnd) setFilterPeriodEnd('')
+              }}
+              maxDate={filterPeriodEnd || undefined}
               placeholder="From DD.MM.YYYY"
             />
             <DatePicker
               value={filterPeriodEnd}
-              onChange={setFilterPeriodEnd}
+              onChange={(v) => {
+                setFilterPeriodEnd(v)
+                if (filterPeriodStart && v < filterPeriodStart) setFilterPeriodStart('')
+              }}
+              minDate={filterPeriodStart || undefined}
               placeholder="To DD.MM.YYYY"
             />
           </div>

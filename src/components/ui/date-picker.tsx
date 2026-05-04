@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { ChevronLeftIcon, ChevronRightIcon, CalendarIcon } from 'lucide-react'
+import { ChevronLeftIcon, ChevronRightIcon, CalendarIcon, XIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
@@ -55,9 +55,11 @@ interface DatePickerProps {
   onChange: (iso: string) => void
   placeholder?: string
   className?: string
+  minDate?: string
+  maxDate?: string
 }
 
-export function DatePicker({ value, onChange, placeholder = 'DD.MM.YYYY', className }: DatePickerProps) {
+export function DatePicker({ value, onChange, placeholder = 'DD.MM.YYYY', className, minDate, maxDate }: DatePickerProps) {
   const today = new Date()
   const selected = parseIso(value)
 
@@ -81,8 +83,18 @@ export function DatePicker({ value, onChange, placeholder = 'DD.MM.YYYY', classN
     else setViewMonth(m => m + 1)
   }
 
+  const minParsed = parseIso(minDate ?? '')
+  const maxParsed = parseIso(maxDate ?? '')
+
+  function isDisabled(d: Date): boolean {
+    if (minParsed && d < minParsed) return true
+    if (maxParsed && d > maxParsed) return true
+    return false
+  }
+
   function selectDay(day: number) {
     const d = new Date(viewYear, viewMonth, day)
+    if (isDisabled(d)) return
     onChange(toIso(d))
     setOpen(false)
   }
@@ -124,13 +136,25 @@ export function DatePicker({ value, onChange, placeholder = 'DD.MM.YYYY', classN
           placeholder={placeholder}
           className="h-8 w-44 min-w-0 rounded-lg border border-input bg-transparent pl-2.5 pr-8 py-1 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         />
-        <PopoverTrigger
-          tabIndex={-1}
-          className="absolute right-2 text-muted-foreground hover:text-foreground transition-colors"
-          aria-label="Open calendar"
-        >
-          <CalendarIcon className="size-3.5" />
-        </PopoverTrigger>
+        {value ? (
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={() => onChange('')}
+            className="absolute right-2 text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="Clear date"
+          >
+            <XIcon className="size-3.5" />
+          </button>
+        ) : (
+          <PopoverTrigger
+            tabIndex={-1}
+            className="absolute right-2 text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="Open calendar"
+          >
+            <CalendarIcon className="size-3.5" />
+          </PopoverTrigger>
+        )}
       </div>
 
       <PopoverContent align="start" className="w-auto p-3">
@@ -163,14 +187,18 @@ export function DatePicker({ value, onChange, placeholder = 'DD.MM.YYYY', classN
             const thisDate = new Date(viewYear, viewMonth, day)
             const isSelected = selected ? isSameDay(thisDate, selected) : false
             const isToday = isSameDay(thisDate, today)
+            const disabled = isDisabled(thisDate)
             return (
               <button
                 key={i}
                 type="button"
                 onClick={() => selectDay(day)}
+                disabled={disabled}
                 className={cn(
                   'flex h-8 w-8 items-center justify-center rounded-lg text-sm transition-colors',
-                  isSelected
+                  disabled
+                    ? 'text-muted-foreground/40 cursor-not-allowed'
+                    : isSelected
                     ? 'bg-primary text-primary-foreground font-medium'
                     : isToday
                     ? 'border border-border text-foreground hover:bg-muted'

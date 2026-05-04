@@ -15,6 +15,15 @@ import { Logo } from '@/components/shared/logo'
 import { loginAction } from './actions'
 import Link from 'next/link'
 
+const DEMO_ROLES = [
+  { label: 'Admin',       email: 'anna.kuzmenko+admin@archysoft.com' },
+  { label: 'Client',      email: 'anna.kuzmenko+client@archysoft.com' },
+  { label: 'Manager',     email: 'anna.kuzmenko+manager@archysoft.com' },
+  { label: 'Copywriter',  email: 'anna.kuzmenko+copywriter@archysoft.com' },
+  { label: 'Sourcer',     email: 'anna.kuzmenko+sourcer@archysoft.com' },
+]
+const DEMO_PASSWORD = '12345678'
+
 const schema = z.object({
   email: z.string().email('Enter a valid email'),
   password: z.string().min(1, 'Password is required'),
@@ -45,6 +54,7 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(schema) })
 
@@ -82,6 +92,25 @@ export default function LoginPage() {
         <CardDescription>Enter your credentials to access your dashboard</CardDescription>
       </CardHeader>
       <CardContent>
+        <div className="mb-4">
+          <p className="text-xs text-muted-foreground mb-1.5">Demo accounts</p>
+          <div className="flex flex-wrap gap-1.5">
+            {DEMO_ROLES.map((role) => (
+              <Button
+                key={role.label}
+                type="button"
+                variant="outline"
+                size="xs"
+                onClick={() => {
+                  setValue('email', role.email, { shouldValidate: true })
+                  setValue('password', DEMO_PASSWORD, { shouldValidate: true })
+                }}
+              >
+                {role.label}
+              </Button>
+            ))}
+          </div>
+        </div>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="email">Email</Label>

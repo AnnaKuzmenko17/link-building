@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -20,10 +21,10 @@ export default function ProfileLoading() {
         <CardContent>
           <div className="grid grid-cols-[auto_1fr] gap-x-8 gap-y-3 text-sm">
             {Array.from({ length: 4 }).map((_, i) => (
-              <>
-                <Skeleton key={`label-${i}`} className="h-4 w-20" />
-                <Skeleton key={`value-${i}`} className="h-4 w-32" />
-              </>
+              <Fragment key={i}>
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-32" />
+              </Fragment>
             ))}
           </div>
         </CardContent>
