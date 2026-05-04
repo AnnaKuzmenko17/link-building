@@ -20,5 +20,10 @@ export const requireSession = cache(async (): Promise<AuthSession> => {
     redirect('/login')
   }
 
-  return { user, role: resolveRole(user.user_metadata?.role) }
+  const role = resolveRole(user.user_metadata?.role)
+  if (!role) {
+    redirect('/login')
+  }
+
+  return { user, role }
 })

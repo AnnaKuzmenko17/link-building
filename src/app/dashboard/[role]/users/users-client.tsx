@@ -17,8 +17,13 @@ interface Props {
 function ClearFiltersButton() {
   const router = useRouter()
   const pathname = usePathname()
+
+  function handleClearFilters() {
+    router.replace(pathname, { scroll: false })
+  }
+
   return (
-    <Button variant="ghost" size="sm" onClick={() => router.replace(pathname, { scroll: false })}>
+    <Button variant="ghost" size="sm" onClick={handleClearFilters}>
       Clear filters
     </Button>
   )
@@ -30,13 +35,17 @@ export function UsersClient({ users, basePath, defaultFilters }: Props) {
   const hasActiveFilters = !!(defaultFilters.role || defaultFilters.status || defaultFilters.search)
   const activeCount = [defaultFilters.role, defaultFilters.status, defaultFilters.search].filter(Boolean).length
 
+  function handleToggleFilters() {
+    setFiltersOpen((v) => !v)
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2">
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setFiltersOpen((v) => !v)}
+          onClick={handleToggleFilters}
           aria-expanded={filtersOpen}
           aria-controls="users-filters"
         >

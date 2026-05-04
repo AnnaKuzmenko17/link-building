@@ -85,7 +85,7 @@ export function ChangePasswordDialog({ open, onOpenChange }: Props) {
               {...register('currentPassword')}
             />
             {errors.currentPassword && (
-              <p id="current-password-error" className="text-xs text-destructive">{errors.currentPassword.message}</p>
+              <p id="current-password-error" role="alert" className="text-xs text-destructive">{errors.currentPassword.message}</p>
             )}
           </div>
 
@@ -99,7 +99,7 @@ export function ChangePasswordDialog({ open, onOpenChange }: Props) {
               {...register('newPassword')}
             />
             {errors.newPassword && (
-              <p id="new-password-error" className="text-xs text-destructive">{errors.newPassword.message}</p>
+              <p id="new-password-error" role="alert" className="text-xs text-destructive">{errors.newPassword.message}</p>
             )}
           </div>
 
@@ -113,7 +113,7 @@ export function ChangePasswordDialog({ open, onOpenChange }: Props) {
               {...register('confirmPassword')}
             />
             {errors.confirmPassword && (
-              <p id="confirm-password-error" className="text-xs text-destructive">{errors.confirmPassword.message}</p>
+              <p id="confirm-password-error" role="alert" className="text-xs text-destructive">{errors.confirmPassword.message}</p>
             )}
           </div>
 

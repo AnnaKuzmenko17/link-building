@@ -3,6 +3,7 @@
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { resolveRole } from '@/lib/resolve-role'
+import type { Role } from '@/types'
 
 const schema = z.object({
   email: z.string().email(),
@@ -10,7 +11,7 @@ const schema = z.object({
 })
 
 type LoginResult =
-  | { success: true; role: ReturnType<typeof resolveRole> }
+  | { success: true; role: Role }
   | { success: false; error: string }
 
 export async function loginAction(email: string, password: string): Promise<LoginResult> {
@@ -26,5 +27,10 @@ export async function loginAction(email: string, password: string): Promise<Logi
     return { success: false, error: 'Invalid email or password.' }
   }
 
-  return { success: true, role: resolveRole(data.user.user_metadata.role) }
+  const role = resolveRole(data.user.user_metadata.role)
+  if (!role) {
+    return { success: false, error: 'Account configuration error. Please contact support.' }
+  }
+
+  return { success: true, role }
 }

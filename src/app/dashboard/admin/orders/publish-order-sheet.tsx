@@ -71,7 +71,7 @@ export function PublishOrderSheet({ open, onOpenChange, order }: Props) {
               {...register('publishedUrl')}
             />
             {errors.publishedUrl && (
-              <p className="text-xs text-destructive">{errors.publishedUrl.message}</p>
+              <p role="alert" className="text-xs text-destructive">{errors.publishedUrl.message}</p>
             )}
           </div>
 

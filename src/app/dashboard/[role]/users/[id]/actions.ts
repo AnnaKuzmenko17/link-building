@@ -131,7 +131,7 @@ export async function resendInviteAction(targetId: string): Promise<Result> {
       to: [{ email: target.email }],
       subject: "You've been invited",
       textContent: `You've been invited. Visit the following link to set your password and activate your account:\n\n${actionLink}`,
-      htmlContent: `<p>You've been invited. <a href="${encodeURI(actionLink)}">Click here to set your password</a> and activate your account.</p>`,
+      htmlContent: `<p>You've been invited. <a href="${actionLink}">Click here to set your password</a> and activate your account.</p>`,
     }),
   })
 

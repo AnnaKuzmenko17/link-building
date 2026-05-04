@@ -101,7 +101,7 @@ export function EditUserSheet({ open, onOpenChange, user, viewerRole }: Props) {
               {...register('first_name')}
             />
             {errors.first_name && (
-              <p id="first-name-error" className="text-xs text-destructive">{errors.first_name.message}</p>
+              <p id="first-name-error" role="alert" className="text-xs text-destructive">{errors.first_name.message}</p>
             )}
           </div>
 
@@ -114,7 +114,7 @@ export function EditUserSheet({ open, onOpenChange, user, viewerRole }: Props) {
               {...register('last_name')}
             />
             {errors.last_name && (
-              <p id="last-name-error" className="text-xs text-destructive">{errors.last_name.message}</p>
+              <p id="last-name-error" role="alert" className="text-xs text-destructive">{errors.last_name.message}</p>
             )}
           </div>
 
@@ -129,7 +129,7 @@ export function EditUserSheet({ open, onOpenChange, user, viewerRole }: Props) {
               {...register('email')}
             />
             {errors.email && (
-              <p id="edit-email-error" className="text-xs text-destructive">{errors.email.message}</p>
+              <p id="edit-email-error" role="alert" className="text-xs text-destructive">{errors.email.message}</p>
             )}
           </div>
 

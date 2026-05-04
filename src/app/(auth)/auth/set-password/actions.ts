@@ -4,9 +4,10 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveRole } from '@/lib/resolve-role'
 import { getUserRoleAndStatus, getUserRole, activateUserAndGetRole } from '@/lib/data/users'
+import type { Role } from '@/types'
 
 type ActivateResult =
-  | { success: true; role: ReturnType<typeof resolveRole> }
+  | { success: true; role: Role }
   | { success: false; error: string }
 
 // Called after the client has already updated the password via supabase.auth.updateUser().
@@ -24,14 +25,20 @@ export async function activateSessionAction(mode: 'first-login' | 'change'): Pro
 
     if (existing?.status !== 'pending') {
       const profile = await getUserRole(supabase, user.id)
-      return { success: true, role: resolveRole(profile?.role) }
+      const role = resolveRole(profile?.role)
+      if (!role) return { success: false, error: 'Account configuration error. Please contact support.' }
+      return { success: true, role }
     }
 
     const adminClient = createAdminClient()
     const profile = await activateUserAndGetRole(adminClient, user.id)
-    return { success: true, role: resolveRole(profile?.role) }
+    const role = resolveRole(profile?.role)
+    if (!role) return { success: false, error: 'Account configuration error. Please contact support.' }
+    return { success: true, role }
   }
 
   const profile = await getUserRole(supabase, user.id)
-  return { success: true, role: resolveRole(profile?.role) }
+  const role = resolveRole(profile?.role)
+  if (!role) return { success: false, error: 'Account configuration error. Please contact support.' }
+  return { success: true, role }
 }

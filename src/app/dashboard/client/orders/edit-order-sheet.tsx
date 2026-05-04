@@ -94,7 +94,7 @@ export function EditOrderSheet({ open, onOpenChange, order }: Props) {
               )}
             />
             {errors.publishMonth && (
-              <p className="text-xs text-destructive">{errors.publishMonth.message}</p>
+              <p role="alert" className="text-xs text-destructive">{errors.publishMonth.message}</p>
             )}
           </div>
 

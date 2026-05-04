@@ -127,7 +127,7 @@ export function InviteUserSheet({ open, onOpenChange, viewerRole, viewerName, ac
               {...register('email')}
             />
             {errors.email && (
-              <p id="invite-email-error" className="text-xs text-destructive">{errors.email.message}</p>
+              <p id="invite-email-error" role="alert" className="text-xs text-destructive">{errors.email.message}</p>
             )}
           </div>
 
@@ -154,7 +154,7 @@ export function InviteUserSheet({ open, onOpenChange, viewerRole, viewerName, ac
               )}
             />
             {errors.role && (
-              <p id="invite-role-error" className="text-xs text-destructive">{errors.role.message}</p>
+              <p id="invite-role-error" role="alert" className="text-xs text-destructive">{errors.role.message}</p>
             )}
           </div>
 
@@ -194,7 +194,7 @@ export function InviteUserSheet({ open, onOpenChange, viewerRole, viewerName, ac
                 />
               )}
               {errors.manager_id && (
-                <p id="invite-manager-error" className="text-xs text-destructive">{errors.manager_id.message}</p>
+                <p id="invite-manager-error" role="alert" className="text-xs text-destructive">{errors.manager_id.message}</p>
               )}
             </div>
           )}

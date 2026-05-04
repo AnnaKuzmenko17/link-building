@@ -120,7 +120,7 @@ export function ReassignOrdersSheet({ open, onOpenChange, targetUserId, orders, 
                 )}
               />
               {errors.assignments?.[index]?.copywriterId && (
-                <p className="text-xs text-destructive">
+                <p role="alert" className="text-xs text-destructive">
                   {errors.assignments[index].copywriterId.message}
                 </p>
               )}

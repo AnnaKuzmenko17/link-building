@@ -137,7 +137,7 @@ export function CategoriesClient({ categories }: Props) {
                 {...register('name')}
               />
               {errors.name && (
-                <p id="category-name-error" className="text-xs text-destructive">{errors.name.message}</p>
+                <p id="category-name-error" role="alert" className="text-xs text-destructive">{errors.name.message}</p>
               )}
             </div>
             <DialogFooter>

@@ -95,7 +95,7 @@ export default function LoginPage() {
               {...register('email')}
             />
             {errors.email && (
-              <p id="email-error" className="text-xs text-destructive">{errors.email.message}</p>
+              <p id="email-error" role="alert" className="text-xs text-destructive">{errors.email.message}</p>
             )}
           </div>
 
@@ -117,7 +117,7 @@ export default function LoginPage() {
               {...register('password')}
             />
             {errors.password && (
-              <p id="password-error" className="text-xs text-destructive">{errors.password.message}</p>
+              <p id="password-error" role="alert" className="text-xs text-destructive">{errors.password.message}</p>
             )}
           </div>
 

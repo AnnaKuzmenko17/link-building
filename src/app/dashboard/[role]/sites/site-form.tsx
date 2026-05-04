@@ -24,6 +24,7 @@ import type { Category, LinkType } from '@/types'
 import type { SiteWithRelations } from '@/lib/data/sites'
 import { createSiteAction, editSiteAction } from './actions'
 import { siteSchema, type SiteFormInput, type SiteFormValues } from './site-schema'
+import { cn } from '@/lib/utils'
 
 const LINK_TYPES: { value: LinkType; label: string }[] = [
   { value: 'dofollow', label: 'Dofollow' },
@@ -103,6 +104,10 @@ export function SiteForm({ categories, site, backHref, isSourcer = false, isAdmi
     }
   }
 
+  function handleCancel() {
+    router.push(backHref)
+  }
+
   const onSubmit: SubmitHandler<SiteFormValues> = async (values) => {
     setIsPending(true)
     const result = isEdit
@@ -145,7 +150,7 @@ export function SiteForm({ categories, site, backHref, isSourcer = false, isAdmi
                 {...register('domain')}
               />
               {errors.domain && (
-                <p id="domain-error" className="text-xs text-destructive">{errors.domain.message}</p>
+                <p id="domain-error" role="alert" className="text-xs text-destructive">{errors.domain.message}</p>
               )}
             </div>
 
@@ -162,7 +167,7 @@ export function SiteForm({ categories, site, backHref, isSourcer = false, isAdmi
                 {...register('dr')}
               />
               {errors.dr && (
-                <p id="dr-error" className="text-xs text-destructive">{errors.dr.message}</p>
+                <p id="dr-error" role="alert" className="text-xs text-destructive">{errors.dr.message}</p>
               )}
             </div>
 
@@ -179,7 +184,7 @@ export function SiteForm({ categories, site, backHref, isSourcer = false, isAdmi
                 {...register('price')}
               />
               {errors.price && (
-                <p id="price-error" className="text-xs text-destructive">{errors.price.message}</p>
+                <p id="price-error" role="alert" className="text-xs text-destructive">{errors.price.message}</p>
               )}
             </div>
 
@@ -228,7 +233,7 @@ export function SiteForm({ categories, site, backHref, isSourcer = false, isAdmi
                 )}
               />
               {errors.category_id && (
-                <p id="category-error" className="text-xs text-destructive">{errors.category_id.message}</p>
+                <p id="category-error" role="alert" className="text-xs text-destructive">{errors.category_id.message}</p>
               )}
             </div>
 
@@ -268,13 +273,13 @@ export function SiteForm({ categories, site, backHref, isSourcer = false, isAdmi
                 {...register('top_countries')}
               />
               {errors.top_countries && (
-                <p id="top-countries-error" className="text-xs text-destructive">{errors.top_countries.message}</p>
+                <p id="top-countries-error" role="alert" className="text-xs text-destructive">{errors.top_countries.message}</p>
               )}
             </div>
 
             {/* Countries multi-select */}
             <div className="flex flex-col gap-1.5 sm:col-span-2">
-              <Label>Countries</Label>
+              <span className="text-sm font-medium leading-none">Countries</span>
               <div
                 className="flex flex-wrap gap-2"
                 role="group"
@@ -287,24 +292,25 @@ export function SiteForm({ categories, site, backHref, isSourcer = false, isAdmi
                     type="button"
                     onClick={() => toggleMulti('countries', country)}
                     aria-pressed={selectedCountries.includes(country)}
-                    className={`rounded-full border px-3 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
+                    className={cn(
+                      'rounded-full border px-3 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
                       selectedCountries.includes(country)
                         ? 'border-primary bg-primary text-primary-foreground'
-                        : 'border-border bg-transparent text-foreground hover:bg-accent'
-                    }`}
+                        : 'border-border bg-transparent text-foreground hover:bg-accent',
+                    )}
                   >
                     {country}
                   </button>
                 ))}
               </div>
               {errors.countries && (
-                <p id="countries-error" className="text-xs text-destructive">{errors.countries.message}</p>
+                <p id="countries-error" role="alert" className="text-xs text-destructive">{errors.countries.message}</p>
               )}
             </div>
 
             {/* Languages multi-select */}
             <div className="flex flex-col gap-1.5 sm:col-span-2">
-              <Label>Languages</Label>
+              <span className="text-sm font-medium leading-none">Languages</span>
               <div
                 className="flex flex-wrap gap-2"
                 role="group"
@@ -317,18 +323,19 @@ export function SiteForm({ categories, site, backHref, isSourcer = false, isAdmi
                     type="button"
                     onClick={() => toggleMulti('languages', lang)}
                     aria-pressed={selectedLanguages.includes(lang)}
-                    className={`rounded-full border px-3 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
+                    className={cn(
+                      'rounded-full border px-3 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
                       selectedLanguages.includes(lang)
                         ? 'border-primary bg-primary text-primary-foreground'
-                        : 'border-border bg-transparent text-foreground hover:bg-accent'
-                    }`}
+                        : 'border-border bg-transparent text-foreground hover:bg-accent',
+                    )}
                   >
                     {lang}
                   </button>
                 ))}
               </div>
               {errors.languages && (
-                <p id="languages-error" className="text-xs text-destructive">{errors.languages.message}</p>
+                <p id="languages-error" role="alert" className="text-xs text-destructive">{errors.languages.message}</p>
               )}
             </div>
 
@@ -416,7 +423,7 @@ export function SiteForm({ categories, site, backHref, isSourcer = false, isAdmi
           type="button"
           variant="outline"
           disabled={isPending}
-          onClick={() => router.push(backHref)}
+          onClick={handleCancel}
         >
           Cancel
         </Button>

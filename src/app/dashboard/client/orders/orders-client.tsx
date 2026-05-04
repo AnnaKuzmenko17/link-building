@@ -43,13 +43,21 @@ export function OrdersClient({ orders }: Props) {
 
   const activeCount = filterStatus ? 1 : 0
 
+  function handleToggleFilters() {
+    setFiltersOpen((v) => !v)
+  }
+
+  function handleClearFilters() {
+    setFilterStatus('')
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2">
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setFiltersOpen((v) => !v)}
+          onClick={handleToggleFilters}
           aria-expanded={filtersOpen}
           aria-controls="orders-filters"
         >
@@ -62,7 +70,7 @@ export function OrdersClient({ orders }: Props) {
           )}
         </Button>
         {activeCount > 0 && (
-          <Button variant="ghost" size="sm" onClick={() => setFilterStatus('')}>
+          <Button variant="ghost" size="sm" onClick={handleClearFilters}>
             Clear filters
           </Button>
         )}

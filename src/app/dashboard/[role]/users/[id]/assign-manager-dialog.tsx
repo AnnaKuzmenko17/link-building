@@ -109,7 +109,7 @@ export function AssignManagerDialog({ open, onOpenChange, targetUserId, currentM
               }}
             />
             {errors.manager_id && (
-              <p className="text-xs text-destructive">{errors.manager_id.message}</p>
+              <p role="alert" className="text-xs text-destructive">{errors.manager_id.message}</p>
             )}
           </div>
 

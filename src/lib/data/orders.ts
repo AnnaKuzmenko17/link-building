@@ -226,3 +226,15 @@ export async function reassignOrder(
 
   return { error }
 }
+
+export async function updateOrdersToCompleted(
+  supabase: Client,
+  orderIds: string[],
+): Promise<{ error: PostgrestError | null }> {
+  if (orderIds.length === 0) return { error: null }
+  const { error } = await supabase
+    .from('orders')
+    .update({ status: 'completed' })
+    .in('id', orderIds)
+  return { error: error ?? null }
+}

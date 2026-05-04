@@ -1,5 +1,3 @@
-'use server'
-
 import type { SupabaseClient, PostgrestError } from '@supabase/supabase-js'
 import type { Database } from '@/types/database.types'
 import type { Site, Category, SiteStatus, Role } from '@/types'

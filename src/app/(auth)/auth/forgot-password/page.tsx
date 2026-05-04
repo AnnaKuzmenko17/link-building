@@ -69,7 +69,7 @@ export default function ForgotPasswordPage() {
                 {...register('email')}
               />
               {errors.email && (
-                <p id="email-error" className="text-xs text-destructive">{errors.email.message}</p>
+                <p id="email-error" role="alert" className="text-xs text-destructive">{errors.email.message}</p>
               )}
             </div>
 

@@ -165,7 +165,7 @@ export default function SetPasswordForm({ mode }: Props) {
               {...register('password')}
             />
             {errors.password && (
-              <p id="password-error" className="text-xs text-destructive">{errors.password.message}</p>
+              <p id="password-error" role="alert" className="text-xs text-destructive">{errors.password.message}</p>
             )}
           </div>
 
@@ -179,7 +179,7 @@ export default function SetPasswordForm({ mode }: Props) {
               {...register('confirmPassword')}
             />
             {errors.confirmPassword && (
-              <p id="confirm-password-error" className="text-xs text-destructive">{errors.confirmPassword.message}</p>
+              <p id="confirm-password-error" role="alert" className="text-xs text-destructive">{errors.confirmPassword.message}</p>
             )}
           </div>
 
