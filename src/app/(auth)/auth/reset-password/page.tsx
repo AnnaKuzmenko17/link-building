@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -32,9 +32,7 @@ export default function ResetPasswordPage() {
   const [done, setDone] = useState(false)
   const [expired, setExpired] = useState(false)
 
-  const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null)
-  if (!supabaseRef.current) supabaseRef.current = createClient()
-  const supabase = supabaseRef.current
+  const supabase = useMemo(() => createClient(), [])
 
   const {
     register,
@@ -55,19 +53,17 @@ export default function ResetPasswordPage() {
       subscription.unsubscribe()
       clearTimeout(timeout)
     }
-  }, [])
+  }, [supabase.auth])
 
-  async function onSubmit(values: FormValues) {
-    const supabase = supabaseRef.current!
+  const onSubmit = useCallback(async (values: FormValues) => {
     const { error } = await supabase.auth.updateUser({ password: values.password })
     if (error) {
       toast.error(error.message)
       return
     }
-    // Sign out so the user is not automatically logged in after reset
     await supabase.auth.signOut()
     setDone(true)
-  }
+  }, [supabase])
 
   if (!ready) {
     return (

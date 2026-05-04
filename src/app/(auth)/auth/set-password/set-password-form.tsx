@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -109,7 +109,7 @@ export default function SetPasswordForm({ mode }: Props) {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(schema) })
 
-  async function onSubmit(values: FormValues) {
+  const onSubmit = useCallback(async (values: FormValues) => {
     const supabase = supabaseRef.current ?? createClient()
     const { error: updateError } = await supabase.auth.updateUser({ password: values.password })
     if (updateError) {
@@ -128,7 +128,12 @@ export default function SetPasswordForm({ mode }: Props) {
     } else {
       router.push(`/dashboard/${result.role}`)
     }
-  }
+  }, [mode, router])
+
+  const handleFormSubmit = useCallback(
+    (e: React.FormEvent<HTMLFormElement>) => { e.preventDefault(); handleSubmit(onSubmit)(e) },
+    [handleSubmit, onSubmit],
+  )
 
   if (!ready) {
     return (
@@ -154,7 +159,7 @@ export default function SetPasswordForm({ mode }: Props) {
         <CardDescription>{t.description}</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        <form onSubmit={handleFormSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="password">{t.passwordLabel}</Label>
             <PasswordInput

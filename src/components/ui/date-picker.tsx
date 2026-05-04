@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { ChevronLeftIcon, ChevronRightIcon, CalendarIcon, XIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
@@ -66,12 +66,15 @@ export function DatePicker({ value, onChange, placeholder = 'DD.MM.YYYY', classN
   const [viewYear, setViewYear] = useState(selected?.getFullYear() ?? today.getFullYear())
   const [viewMonth, setViewMonth] = useState(selected?.getMonth() ?? today.getMonth())
   const [open, setOpen] = useState(false)
+  const [committedValue, setCommittedValue] = useState(value)
   const [inputValue, setInputValue] = useState(formatDisplay(value))
   const inputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
+  // Sync display when value changes externally (e.g. clear button, minDate/maxDate reset)
+  if (value !== committedValue) {
+    setCommittedValue(value)
     setInputValue(formatDisplay(value))
-  }, [value])
+  }
 
   function prevMonth() {
     if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1) }

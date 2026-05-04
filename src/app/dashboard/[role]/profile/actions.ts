@@ -5,7 +5,6 @@ import { requireSession } from '@/lib/auth/get-session'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { getUserById, findUserByEmailExcluding, updateUserProfile, updateUserAvatar } from '@/lib/data/users'
-import type { Role } from '@/types'
 
 type Result = { success: true } | { success: false; error: string }
 
