@@ -288,6 +288,7 @@ export type Database = {
       orders: {
         Row: {
           client_id: string
+          comment: string | null
           content: string | null
           copywriter_id: string | null
           created_at: string
@@ -301,6 +302,7 @@ export type Database = {
         }
         Insert: {
           client_id: string
+          comment?: string | null
           content?: string | null
           copywriter_id?: string | null
           created_at?: string
@@ -314,6 +316,7 @@ export type Database = {
         }
         Update: {
           client_id?: string
+          comment?: string | null
           content?: string | null
           copywriter_id?: string | null
           created_at?: string

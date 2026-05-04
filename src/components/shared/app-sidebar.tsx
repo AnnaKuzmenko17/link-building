@@ -37,8 +37,9 @@ interface NavItem {
 
 const navItems: Record<Role, NavItem[]> = {
   client: [
-    { label: 'Orders', href: '/dashboard/client/orders', icon: ClipboardListIcon },
+    { label: 'Sites', href: '/dashboard/client/sites', icon: GlobeIcon },
     { label: 'Cart', href: '/dashboard/client/cart', icon: ShoppingCartIcon },
+    { label: 'Orders', href: '/dashboard/client/orders', icon: ClipboardListIcon },
     { label: 'Invoices', href: '/dashboard/client/invoices', icon: FileTextIcon },
     { label: 'Chat', href: '/dashboard/client/chat', icon: MessageCircleIcon },
   ],
