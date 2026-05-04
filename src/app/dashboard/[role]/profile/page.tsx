@@ -5,6 +5,14 @@ import { getUserById } from '@/lib/data/users'
 import { PageHeader } from '@/components/shared/page-header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ProfileActions } from './profile-actions'
+import { AvatarUpload } from './avatar-upload'
+
+function getInitials(profile: { first_name: string; last_name: string; email: string }): string {
+  if (profile.first_name) {
+    return (profile.first_name[0] + (profile.last_name?.[0] ?? '')).toUpperCase()
+  }
+  return profile.email[0]?.toUpperCase() ?? '?'
+}
 
 export default async function ProfilePage() {
   const { user } = await requireSession()
@@ -18,6 +26,12 @@ export default async function ProfilePage() {
       <PageHeader
         title="Profile"
         action={<ProfileActions profile={profile} />}
+      />
+
+      <AvatarUpload
+        userId={profile.id}
+        currentUrl={profile.avatar_url ?? null}
+        initials={getInitials(profile)}
       />
 
       <Card>

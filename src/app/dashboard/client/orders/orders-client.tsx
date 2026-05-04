@@ -81,7 +81,9 @@ export function OrdersClient({ orders }: Props) {
           <div className="flex flex-wrap gap-3">
             <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v ?? '')}>
               <SelectTrigger className="w-44">
-                <SelectValue placeholder="All Statuses" />
+                <SelectValue placeholder="All Statuses">
+                  {filterStatus ? (STATUS_OPTIONS.find((s) => s.value === filterStatus)?.label ?? filterStatus) : 'All Statuses'}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">All Statuses</SelectItem>

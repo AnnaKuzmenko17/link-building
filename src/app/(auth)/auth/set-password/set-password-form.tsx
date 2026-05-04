@@ -33,7 +33,7 @@ interface Props {
 const copy = {
   'first-login': {
     title: 'Set your password',
-    description: "You've been invited to Linkbuilding. Create a password to activate your account.",
+    description: "You've been invited to Linkly. Create a password to activate your account.",
     passwordLabel: 'Password',
     button: 'Activate account',
     buttonPending: 'Activating…',

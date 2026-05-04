@@ -15,10 +15,10 @@ interface Props {
 
 function Field({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <>
+    <div className="flex flex-col gap-1">
       <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="text-sm">{value ?? '—'}</dd>
-    </>
+      <dd className="text-sm font-medium">{value ?? '—'}</dd>
+    </div>
   )
 }
 
@@ -72,10 +72,10 @@ export default async function SiteDetailPage({ params }: Props) {
             )}
 
             {showStatus && (
-              <>
+              <div className="flex flex-col gap-1">
                 <dt className="text-xs text-muted-foreground">Status</dt>
                 <dd><StatusBadge status={site.status} /></dd>
-              </>
+              </div>
             )}
 
             {isAdmin && site.status === 'needs_changes' && (
@@ -113,31 +113,31 @@ export default async function SiteDetailPage({ params }: Props) {
             )}
 
             {showRestricted && site.requirements && (
-              <>
-                <dt className="text-xs text-muted-foreground sm:col-span-2 lg:col-span-3">Requirements</dt>
-                <dd className="text-sm whitespace-pre-wrap sm:col-span-2 lg:col-span-3">{site.requirements}</dd>
-              </>
+              <div className="sm:col-span-2 lg:col-span-3 flex flex-col gap-1">
+                <dt className="text-xs text-muted-foreground">Requirements</dt>
+                <dd className="text-sm whitespace-pre-wrap">{site.requirements}</dd>
+              </div>
             )}
 
             {showRestricted && site.description && (
-              <>
-                <dt className="text-xs text-muted-foreground sm:col-span-2 lg:col-span-3">Description</dt>
-                <dd className="text-sm whitespace-pre-wrap sm:col-span-2 lg:col-span-3">{site.description}</dd>
-              </>
+              <div className="sm:col-span-2 lg:col-span-3 flex flex-col gap-1">
+                <dt className="text-xs text-muted-foreground">Description</dt>
+                <dd className="text-sm whitespace-pre-wrap">{site.description}</dd>
+              </div>
             )}
 
             {(isSourcer || isAdmin) && site.sourcer_notes && (
-              <>
-                <dt className="text-xs text-muted-foreground sm:col-span-2 lg:col-span-3">Sourcer Notes</dt>
-                <dd className="text-sm whitespace-pre-wrap sm:col-span-2 lg:col-span-3">{site.sourcer_notes}</dd>
-              </>
+              <div className="sm:col-span-2 lg:col-span-3 flex flex-col gap-1">
+                <dt className="text-xs text-muted-foreground">Sourcer Notes</dt>
+                <dd className="text-sm whitespace-pre-wrap">{site.sourcer_notes}</dd>
+              </div>
             )}
 
             {showRestricted && site.contact_info && (
-              <>
-                <dt className="text-xs text-muted-foreground sm:col-span-2 lg:col-span-3">Contact Info</dt>
-                <dd className="text-sm whitespace-pre-wrap sm:col-span-2 lg:col-span-3">{site.contact_info}</dd>
-              </>
+              <div className="sm:col-span-2 lg:col-span-3 flex flex-col gap-1">
+                <dt className="text-xs text-muted-foreground">Contact Info</dt>
+                <dd className="text-sm whitespace-pre-wrap">{site.contact_info}</dd>
+              </div>
             )}
 
             {isAdmin && site.created_by_user && (

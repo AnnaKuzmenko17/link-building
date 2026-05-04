@@ -144,7 +144,9 @@ export function SitesClient({ sites, categories, viewerRole, viewerUserId }: Pro
 
         <Select value={filterCategory} onValueChange={(v) => setFilterCategory(v ?? '')} items={categoryItems}>
           <SelectTrigger className="w-40">
-            <SelectValue placeholder="Category" />
+            <SelectValue placeholder="Category">
+              {filterCategory ? (categories.find((c) => c.id === filterCategory)?.name ?? filterCategory) : 'Category'}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="">All Categories</SelectItem>
@@ -157,7 +159,9 @@ export function SitesClient({ sites, categories, viewerRole, viewerUserId }: Pro
         {(viewerRole === 'sourcer' || viewerRole === 'admin') && (
           <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v ?? '')} items={statusItems}>
             <SelectTrigger className="w-40">
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder="Status">
+                {filterStatus ? (STATUS_OPTIONS.find((s) => s.value === filterStatus)?.label ?? filterStatus) : 'Status'}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">All Statuses</SelectItem>
@@ -170,7 +174,9 @@ export function SitesClient({ sites, categories, viewerRole, viewerUserId }: Pro
 
         <Select value={filterCountry} onValueChange={(v) => setFilterCountry(v ?? '')} items={countryItems}>
           <SelectTrigger className="w-40">
-            <SelectValue placeholder="Country" />
+            <SelectValue placeholder="Country">
+              {filterCountry || 'Country'}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="">All Countries</SelectItem>
@@ -182,7 +188,9 @@ export function SitesClient({ sites, categories, viewerRole, viewerUserId }: Pro
 
         <Select value={filterLanguage} onValueChange={(v) => setFilterLanguage(v ?? '')} items={languageItems}>
           <SelectTrigger className="w-36">
-            <SelectValue placeholder="Language" />
+            <SelectValue placeholder="Language">
+              {filterLanguage || 'Language'}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="">All Languages</SelectItem>
@@ -194,7 +202,9 @@ export function SitesClient({ sites, categories, viewerRole, viewerUserId }: Pro
 
         <Select value={filterLinkType} onValueChange={(v) => setFilterLinkType(v ?? '')} items={linkTypeItems}>
           <SelectTrigger className="w-36">
-            <SelectValue placeholder="Link Type" />
+            <SelectValue placeholder="Link Type">
+              {filterLinkType ? (LINK_TYPE_OPTIONS.find((lt) => lt.value === filterLinkType)?.label ?? filterLinkType) : 'Link Type'}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="">All Types</SelectItem>

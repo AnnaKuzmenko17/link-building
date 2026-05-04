@@ -20,7 +20,7 @@ export function buildInvoiceColumns(role: string): ColumnDef<InvoiceListRow>[] {
       id: 'client',
       header: 'Client',
       cell: ({ row }) =>
-        `${row.original.client.first_name} ${row.original.client.last_name}`,
+        `${row.original.client.first_name} ${row.original.client.last_name}`.trim() || '—',
     })
   }
 

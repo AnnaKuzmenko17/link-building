@@ -101,7 +101,9 @@ export function ManagerOrdersClient({ orders, copywriters, clients, role }: Prop
           <div className="flex flex-wrap gap-3">
             <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v ?? '')}>
               <SelectTrigger className="w-44">
-                <SelectValue placeholder="All Statuses" />
+                <SelectValue placeholder="All Statuses">
+                  {filterStatus ? (STATUS_OPTIONS.find((s) => s.value === filterStatus)?.label ?? filterStatus) : 'All Statuses'}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">All Statuses</SelectItem>
@@ -113,7 +115,11 @@ export function ManagerOrdersClient({ orders, copywriters, clients, role }: Prop
 
             <Select value={filterClient} onValueChange={(v) => setFilterClient(v ?? '')}>
               <SelectTrigger className="w-44">
-                <SelectValue placeholder="All Clients" />
+                <SelectValue placeholder="All Clients">
+                  {filterClient
+                    ? (clients.find((c) => c.id === filterClient)?.first_name ?? '') + ' ' + (clients.find((c) => c.id === filterClient)?.last_name ?? '')
+                    : 'All Clients'}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">All Clients</SelectItem>
@@ -127,7 +133,13 @@ export function ManagerOrdersClient({ orders, copywriters, clients, role }: Prop
 
             <Select value={filterCopywriter} onValueChange={(v) => setFilterCopywriter(v ?? '')}>
               <SelectTrigger className="w-44">
-                <SelectValue placeholder="All Copywriters" />
+                <SelectValue placeholder="All Copywriters">
+                  {filterCopywriter === '__unassigned__'
+                    ? 'Unassigned'
+                    : filterCopywriter
+                      ? (copywriters.find((cw) => cw.id === filterCopywriter)?.first_name ?? '') + ' ' + (copywriters.find((cw) => cw.id === filterCopywriter)?.last_name ?? '')
+                      : 'All Copywriters'}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">All Copywriters</SelectItem>
@@ -142,7 +154,9 @@ export function ManagerOrdersClient({ orders, copywriters, clients, role }: Prop
 
             <Select value={filterMonth} onValueChange={(v) => setFilterMonth(v ?? '')}>
               <SelectTrigger className="w-44">
-                <SelectValue placeholder="All Months" />
+                <SelectValue placeholder="All Months">
+                  {filterMonth ? (publishMonths.find((m) => m.value === filterMonth)?.label ?? filterMonth) : 'All Months'}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">All Months</SelectItem>

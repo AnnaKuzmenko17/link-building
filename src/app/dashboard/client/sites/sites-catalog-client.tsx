@@ -113,7 +113,9 @@ export function SitesCatalogClient({ sites, categories, cartSiteIds }: Props) {
 
           <Select value={filterCategory} onValueChange={(v) => setFilterCategory(v ?? '')} items={categories.map((c) => ({ value: c.id, label: c.name }))}>
             <SelectTrigger className="w-40">
-              <SelectValue placeholder="Category" />
+              <SelectValue placeholder="Category">
+                {filterCategory ? (categories.find((c) => c.id === filterCategory)?.name ?? filterCategory) : 'Category'}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">All Categories</SelectItem>
@@ -125,7 +127,9 @@ export function SitesCatalogClient({ sites, categories, cartSiteIds }: Props) {
 
           <Select value={filterCountry} onValueChange={(v) => setFilterCountry(v ?? '')} items={COUNTRIES.map((c) => ({ value: c, label: c }))}>
             <SelectTrigger className="w-40">
-              <SelectValue placeholder="Country" />
+              <SelectValue placeholder="Country">
+                {filterCountry || 'Country'}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">All Countries</SelectItem>
@@ -137,7 +141,9 @@ export function SitesCatalogClient({ sites, categories, cartSiteIds }: Props) {
 
           <Select value={filterLanguage} onValueChange={(v) => setFilterLanguage(v ?? '')} items={LANGUAGES.map((l) => ({ value: l, label: l }))}>
             <SelectTrigger className="w-36">
-              <SelectValue placeholder="Language" />
+              <SelectValue placeholder="Language">
+                {filterLanguage || 'Language'}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">All Languages</SelectItem>
@@ -149,7 +155,9 @@ export function SitesCatalogClient({ sites, categories, cartSiteIds }: Props) {
 
           <Select value={filterLinkType} onValueChange={(v) => setFilterLinkType(v ?? '')} items={LINK_TYPE_OPTIONS.map((lt) => ({ value: lt.value, label: lt.label }))}>
             <SelectTrigger className="w-36">
-              <SelectValue placeholder="Link Type" />
+              <SelectValue placeholder="Link Type">
+                {filterLinkType ? (LINK_TYPE_OPTIONS.find((lt) => lt.value === filterLinkType)?.label ?? filterLinkType) : 'Link Type'}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">All Types</SelectItem>

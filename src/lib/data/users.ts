@@ -231,6 +231,19 @@ export async function updateUserProfile(
   return { error }
 }
 
+export async function updateUserAvatar(
+  supabase: Client,
+  id: string,
+  avatar_url: string | null
+): Promise<{ error: PostgrestError | null }> {
+  const { error } = await supabase
+    .from('users')
+    .update({ avatar_url })
+    .eq('id', id)
+
+  return { error }
+}
+
 export async function setUserStatus(
   supabase: Client,
   id: string,

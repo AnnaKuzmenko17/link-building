@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Input } from '@/components/ui/input'
+import { DatePicker } from '@/components/ui/date-picker'
 import { DataTable } from '@/components/shared/data-table'
 import { buildInvoiceColumns } from './invoices-columns'
 import type { InvoiceListRow } from '@/lib/data/invoices'
@@ -88,7 +88,9 @@ export function InvoicesClient({ invoices, clients, role }: Props) {
           <div className="flex flex-wrap gap-3">
             <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v ?? '')}>
               <SelectTrigger className="w-44">
-                <SelectValue placeholder="All Statuses" />
+                <SelectValue placeholder="All Statuses">
+                  {filterStatus ? (STATUS_OPTIONS.find((s) => s.value === filterStatus)?.label ?? filterStatus) : 'All Statuses'}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">All Statuses</SelectItem>
@@ -101,32 +103,32 @@ export function InvoicesClient({ invoices, clients, role }: Props) {
             {role !== 'client' && (
               <Select value={filterClient} onValueChange={(v) => setFilterClient(v ?? '')}>
                 <SelectTrigger className="w-44">
-                  <SelectValue placeholder="All Clients" />
+                  <SelectValue placeholder="All Clients">
+                    {filterClient
+                      ? (`${clients.find((c) => c.id === filterClient)?.first_name ?? ''} ${clients.find((c) => c.id === filterClient)?.last_name ?? ''}`).trim() || '—'
+                      : 'All Clients'}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">All Clients</SelectItem>
                   {clients.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
-                      {c.first_name} {c.last_name}
+                      {(`${c.first_name} ${c.last_name}`).trim() || '—'}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             )}
 
-            <Input
-              type="date"
-              className="w-44"
+            <DatePicker
               value={filterPeriodStart}
-              onChange={(e) => setFilterPeriodStart(e.target.value)}
-              placeholder="Period from"
+              onChange={setFilterPeriodStart}
+              placeholder="From DD.MM.YYYY"
             />
-            <Input
-              type="date"
-              className="w-44"
+            <DatePicker
               value={filterPeriodEnd}
-              onChange={(e) => setFilterPeriodEnd(e.target.value)}
-              placeholder="Period to"
+              onChange={setFilterPeriodEnd}
+              placeholder="To DD.MM.YYYY"
             />
           </div>
         </div>

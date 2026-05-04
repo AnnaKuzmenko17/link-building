@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/sidebar'
 import { Logo } from '@/components/shared/logo'
 import { LogoutButton } from '@/components/shared/logout-button'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import type { Role } from '@/types'
 import type { User } from '@supabase/supabase-js'
 
@@ -88,6 +89,7 @@ export function AppSidebar({ role, user }: Props) {
   const lastName = typeof meta.last_name === 'string' ? meta.last_name : undefined
   const displayName = firstName ? `${firstName} ${lastName ?? ''}`.trim() : user.email ?? ''
   const avatar = getInitial(firstName || user.email)
+  const avatarUrl = typeof meta.avatar_url === 'string' ? meta.avatar_url : undefined
 
   return (
     <Sidebar>
@@ -117,9 +119,12 @@ export function AppSidebar({ role, user }: Props) {
 
       <SidebarFooter className="p-4">
         <Link href={`/dashboard/${role}/profile`} className="flex items-center gap-3 rounded-md hover:bg-sidebar-accent transition-colors p-1 -mx-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
-            {avatar}
-          </div>
+          <Avatar size="default">
+            {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
+            <AvatarFallback className="bg-primary text-primary-foreground text-xs font-medium">
+              {avatar}
+            </AvatarFallback>
+          </Avatar>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium">{displayName}</p>
             <p className="truncate text-xs text-muted-foreground">{user.email}</p>

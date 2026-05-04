@@ -125,7 +125,7 @@ export async function resendInviteAction(targetId: string): Promise<Result> {
     },
     body: JSON.stringify({
       sender: {
-        name: process.env.BREVO_SENDER_NAME ?? 'Linkbuilding',
+        name: process.env.BREVO_SENDER_NAME ?? 'Linkly',
         email: brevoSenderEmail,
       },
       to: [{ email: target.email }],

@@ -87,7 +87,9 @@ export function UsersFilterBar({ defaultValues }: Props) {
       </div>
       <Select value={roleValue} onValueChange={handleRoleChange} items={roleItems}>
         <SelectTrigger className="w-40">
-          <SelectValue placeholder="All Roles" />
+          <SelectValue placeholder="All Roles">
+            {roleItems.find((r) => r.value === roleValue)?.label ?? 'All Roles'}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Roles</SelectItem>
@@ -100,7 +102,9 @@ export function UsersFilterBar({ defaultValues }: Props) {
       </Select>
       <Select value={statusValue} onValueChange={handleStatusChange} items={statusItems}>
         <SelectTrigger className="w-40">
-          <SelectValue placeholder="All Statuses" />
+          <SelectValue placeholder="All Statuses">
+            {statusItems.find((s) => s.value === statusValue)?.label ?? 'All Statuses'}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Statuses</SelectItem>

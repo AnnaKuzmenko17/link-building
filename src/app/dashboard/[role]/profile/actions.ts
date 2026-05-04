@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { requireSession } from '@/lib/auth/get-session'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-import { getUserById, findUserByEmailExcluding, updateUserProfile } from '@/lib/data/users'
+import { getUserById, findUserByEmailExcluding, updateUserProfile, updateUserAvatar } from '@/lib/data/users'
 import type { Role } from '@/types'
 
 type Result = { success: true } | { success: false; error: string }
@@ -52,6 +52,22 @@ export async function updateProfileAction(input: {
   if (error) return { success: false, error: 'Failed to update profile. Please try again.' }
 
   await adminClient.auth.admin.updateUserById(user.id, { email })
+
+  return { success: true }
+}
+
+// ── Update Avatar ──────────────────────────────────────────────────────────
+
+export async function updateAvatarAction(avatar_url: string | null): Promise<Result> {
+  const { user } = await requireSession()
+  const admin = createAdminClient()
+
+  const { error } = await updateUserAvatar(admin, user.id, avatar_url)
+  if (error) return { success: false, error: 'Failed to save avatar.' }
+
+  await admin.auth.admin.updateUserById(user.id, {
+    user_metadata: { ...user.user_metadata, avatar_url },
+  })
 
   return { success: true }
 }
