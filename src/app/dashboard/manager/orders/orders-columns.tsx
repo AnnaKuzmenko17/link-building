@@ -89,7 +89,7 @@ export function buildManagerOrderColumns(
           className="font-medium text-primary hover:underline"
           onClick={(e) => e.stopPropagation()}
         >
-          {row.original.site.domain}
+          {row.original.site?.domain ?? '—'}
         </Link>
       ),
     },

@@ -95,7 +95,7 @@ export function ReassignOrdersSheet({ open, onOpenChange, targetUserId, orders, 
           {orders.map((order, index) => (
             <div key={order.id} className="flex flex-col gap-1.5">
               <Label htmlFor={`order-${order.id}`}>
-                {order.site.domain} — {order.publish_month}
+                {order.site?.domain ?? '—'} — {order.publish_month}
               </Label>
               <Controller
                 name={`assignments.${index}.copywriterId`}

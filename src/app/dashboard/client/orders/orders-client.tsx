@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { SlidersHorizontalIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -33,6 +34,7 @@ const STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
 const columns = buildOrderColumns()
 
 export function OrdersClient({ orders }: Props) {
+  const router = useRouter()
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [filterStatus, setFilterStatus] = useState('')
 
@@ -96,7 +98,11 @@ export function OrdersClient({ orders }: Props) {
         </div>
       )}
 
-      <DataTable columns={columns} data={filtered} />
+      <DataTable
+        columns={columns}
+        data={filtered}
+        onRowClick={(order) => router.push(`/dashboard/client/orders/${order.id}`)}
+      />
     </div>
   )
 }

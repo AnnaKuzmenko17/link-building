@@ -61,7 +61,7 @@ export function AssignCopywriterSheet({ open, onOpenChange, order, copywriters }
       <SheetContent className="flex flex-col overflow-y-auto">
         <SheetHeader>
           <SheetTitle>
-            {isReassign ? 'Reassign Copywriter' : 'Assign Copywriter'} — {order.site.domain}
+            {isReassign ? 'Reassign Copywriter' : 'Assign Copywriter'} — {order.site?.domain ?? '—'}
           </SheetTitle>
         </SheetHeader>
 

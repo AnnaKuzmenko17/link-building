@@ -58,7 +58,7 @@ export function PublishOrderSheet({ open, onOpenChange, order }: Props) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="flex flex-col overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>Publish Order — {order.site.domain}</SheetTitle>
+          <SheetTitle>Publish Order — {order.site?.domain ?? '—'}</SheetTitle>
         </SheetHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-1 flex-col gap-4 px-4 py-4">

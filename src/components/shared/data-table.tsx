@@ -1,5 +1,6 @@
 'use client'
 
+import { useRef, useEffect } from 'react'
 import {
   flexRender,
   getCoreRowModel,
@@ -25,6 +26,18 @@ interface Props<T> {
 }
 
 export function DataTable<T>({ columns, data, isLoading, onRowClick }: Props<T>) {
+  const tableRef = useRef<HTMLDivElement>(null)
+  // true when the most recent pointerdown started outside the table (e.g. on a sheet backdrop)
+  const pointerDownOutside = useRef(false)
+
+  useEffect(() => {
+    if (!onRowClick) return
+    function onPointerDown(e: PointerEvent) {
+      pointerDownOutside.current = !tableRef.current?.contains(e.target as Node)
+    }
+    document.addEventListener('pointerdown', onPointerDown, true)
+    return () => document.removeEventListener('pointerdown', onPointerDown, true)
+  }, [onRowClick])
   const table = useReactTable({
     data,
     columns,
@@ -32,7 +45,7 @@ export function DataTable<T>({ columns, data, isLoading, onRowClick }: Props<T>)
   })
 
   return (
-    <div className="rounded-lg border">
+    <div ref={tableRef} className="rounded-lg border">
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
@@ -64,20 +77,21 @@ export function DataTable<T>({ columns, data, isLoading, onRowClick }: Props<T>)
             </TableRow>
           ) : (
             table.getRowModel().rows.map((row) => {
-              function handleRowClick() {
-                onRowClick?.(row.original)
-              }
-              function handleRowKeyDown(e: React.KeyboardEvent) {
+              function handleKeyDown(e: React.KeyboardEvent) {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault()
                   onRowClick?.(row.original)
                 }
               }
+              function handleClick() {
+                if (pointerDownOutside.current) return
+                onRowClick?.(row.original)
+              }
               return (
                 <TableRow
                   key={row.id}
-                  onClick={onRowClick ? handleRowClick : undefined}
-                  onKeyDown={onRowClick ? handleRowKeyDown : undefined}
+                  onClick={onRowClick ? handleClick : undefined}
+                  onKeyDown={onRowClick ? handleKeyDown : undefined}
                   tabIndex={onRowClick ? 0 : undefined}
                   className={onRowClick ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring' : undefined}
                 >

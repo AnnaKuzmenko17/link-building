@@ -68,7 +68,7 @@ export function ReviewContentSheet({ open, onOpenChange, order }: Props) {
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent className="flex flex-col overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>Review Content — {order.site.domain}</SheetTitle>
+            <SheetTitle>Review Content — {order.site?.domain ?? '—'}</SheetTitle>
           </SheetHeader>
 
           <div className="flex flex-1 flex-col gap-2 px-4 py-4">

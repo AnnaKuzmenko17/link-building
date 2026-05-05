@@ -107,7 +107,7 @@ export function EditInvoiceSheet({ invoice, open, onOpenChange, onSuccess }: Pro
                 return (
                   <div key={field.id} className="flex flex-col gap-1.5">
                     <Label htmlFor={`items.${index}.amount`} className="text-muted-foreground text-xs">
-                      {item?.order.site.domain ?? `Item ${index + 1}`}
+                      {item?.order.site?.domain ?? `Item ${index + 1}`}
                     </Label>
                     <Input
                       id={`items.${index}.amount`}

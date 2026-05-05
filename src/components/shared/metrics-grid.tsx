@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
@@ -20,14 +21,16 @@ export function MetricsGrid({ metrics }: Props) {
   return (
     <div className={cn('grid gap-4', colClass)}>
       {metrics.map((metric) => (
-        <Card key={metric.label}>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground">{metric.label}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{metric.value}</p>
-          </CardContent>
-        </Card>
+        <Link key={metric.label} href={metric.href} className="group">
+          <Card className="h-full transition-colors group-hover:bg-muted/50">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium text-muted-foreground">{metric.label}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold">{metric.value}</p>
+            </CardContent>
+          </Card>
+        </Link>
       ))}
     </div>
   )

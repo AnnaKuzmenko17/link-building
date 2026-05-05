@@ -108,7 +108,7 @@ export default async function InvoiceDetailPage({ params }: Props) {
             <TableBody>
               {invoice.invoice_items.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell>{item.order.site.domain}</TableCell>
+                  <TableCell>{item.order.site?.domain ?? '—'}</TableCell>
                   <TableCell>
                     #{String(item.order.order_number).padStart(6, '0')}
                   </TableCell>

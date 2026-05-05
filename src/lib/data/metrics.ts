@@ -9,6 +9,7 @@ const CLOSED_ORDER_STATUSES = '("completed","canceled")'
 export interface MetricCard {
   label: string
   value: number
+  href: string
 }
 
 async function getClientMetrics(supabase: Client, userId: string): Promise<MetricCard[]> {
@@ -22,8 +23,8 @@ async function getClientMetrics(supabase: Client, userId: string): Promise<Metri
   ])
 
   return [
-    { label: 'Open Orders', value: openOrders ?? 0 },
-    { label: 'Invoices Due', value: invoicesDue ?? 0 },
+    { label: 'Open Orders', value: openOrders ?? 0, href: '/dashboard/client/orders' },
+    { label: 'Invoices Due', value: invoicesDue ?? 0, href: '/dashboard/client/invoices' },
   ]
 }
 
@@ -38,9 +39,9 @@ async function getManagerMetrics(supabase: Client): Promise<MetricCard[]> {
   ])
 
   return [
-    { label: 'Open Orders', value: openOrders ?? 0 },
-    { label: 'Pending Users', value: pendingUsers ?? 0 },
-    { label: 'Active Sites', value: activeSites ?? 0 },
+    { label: 'Open Orders', value: openOrders ?? 0, href: '/dashboard/manager/orders' },
+    { label: 'Pending Users', value: pendingUsers ?? 0, href: '/dashboard/manager/users' },
+    { label: 'Active Sites', value: activeSites ?? 0, href: '/dashboard/manager/sites' },
   ]
 }
 
@@ -55,8 +56,8 @@ async function getCopywriterMetrics(supabase: Client, userId: string): Promise<M
   ])
 
   return [
-    { label: 'Orders In Progress', value: inProgress ?? 0 },
-    { label: 'Needs Changes', value: needsChanges ?? 0 },
+    { label: 'Orders In Progress', value: inProgress ?? 0, href: '/dashboard/copywriter/orders' },
+    { label: 'Needs Changes', value: needsChanges ?? 0, href: '/dashboard/copywriter/orders' },
   ]
 }
 
@@ -71,8 +72,8 @@ async function getSourcerMetrics(supabase: Client, userId: string): Promise<Metr
   ])
 
   return [
-    { label: 'Active Sites', value: activeSites ?? 0 },
-    { label: 'Pending Sites', value: pendingSites ?? 0 },
+    { label: 'Active Sites', value: activeSites ?? 0, href: '/dashboard/sourcer/sites' },
+    { label: 'Pending Sites', value: pendingSites ?? 0, href: '/dashboard/sourcer/sites' },
   ]
 }
 
@@ -86,9 +87,9 @@ async function getAdminMetrics(supabase: Client): Promise<MetricCard[]> {
   ])
 
   return [
-    { label: 'Open Orders', value: openOrders ?? 0 },
-    { label: 'Total Users', value: totalUsers ?? 0 },
-    { label: 'Active Sites', value: activeSites ?? 0 },
+    { label: 'Open Orders', value: openOrders ?? 0, href: '/dashboard/admin/orders' },
+    { label: 'Total Users', value: totalUsers ?? 0, href: '/dashboard/admin/users' },
+    { label: 'Active Sites', value: activeSites ?? 0, href: '/dashboard/admin/sites' },
   ]
 }
 

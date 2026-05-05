@@ -30,6 +30,7 @@ import type { OrderWithSite } from '@/lib/data/orders'
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
+  onSuccess?: () => void
   order: OrderWithSite
 }
 
@@ -40,7 +41,7 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
-export function EditOrderSheet({ open, onOpenChange, order }: Props) {
+export function EditOrderSheet({ open, onOpenChange, onSuccess, order }: Props) {
   const router = useRouter()
   const [isPending, setIsPending] = useState(false)
   const publishMonthOptions = getPublishMonthOptions()
@@ -60,14 +61,18 @@ export function EditOrderSheet({ open, onOpenChange, order }: Props) {
     }
     toast.success('Order updated.')
     onOpenChange(false)
-    router.refresh()
+    if (onSuccess) {
+      onSuccess()
+    } else {
+      router.refresh()
+    }
   }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="flex flex-col overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>Edit Order — {order.site.domain}</SheetTitle>
+          <SheetTitle>Edit Order — {order.site?.domain ?? '—'}</SheetTitle>
         </SheetHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-1 flex-col gap-4 px-4 py-4">

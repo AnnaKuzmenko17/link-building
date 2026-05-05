@@ -7,6 +7,7 @@ import { StatusBadge } from '@/components/shared/status-badge'
 import { BackButton } from '@/components/shared/back-button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatPublishMonth } from '@/lib/publish-months'
+import { ClientOrderActions } from './client-order-actions'
 
 interface Props {
   params: Promise<{ role: string; id: string }>
@@ -25,9 +26,14 @@ export default async function OrderDetailPage({ params }: Props) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-3">
-        <BackButton fallbackHref={`/dashboard/${role}/orders`} />
-        <PageHeader title={`Order — ${order.site.domain}`} />
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <BackButton fallbackHref={`/dashboard/${role}/orders`} />
+          <PageHeader title={`Order — ${order.site?.domain ?? '—'}`} />
+        </div>
+        {role === 'client' && order.status === 'new' && (
+          <ClientOrderActions order={order} />
+        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

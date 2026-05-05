@@ -83,7 +83,7 @@ export function CartClient({ cartItems }: Props) {
           <div key={item.id} className="flex flex-col gap-3 rounded-lg border p-4">
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{item.site.domain}</p>
+                <p className="font-medium truncate">{item.site?.domain ?? '—'}</p>
                 <p className="text-sm text-muted-foreground">
                   {item.site.category?.name ?? '—'} · ${Number(item.site.price).toFixed(2)}
                 </p>

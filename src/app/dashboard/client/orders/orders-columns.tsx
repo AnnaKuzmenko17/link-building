@@ -23,8 +23,9 @@ function OrderActions({ order }: { order: OrderWithSite }) {
   const showEdit = order.status === 'new'
   const showCancel = order.status === 'new'
   const showReview = order.status === 'content_sent'
+  const showLink = (order.status === 'published' || order.status === 'completed') && !!order.published_url
 
-  if (!showEdit && !showCancel && !showReview) return null
+  if (!showEdit && !showCancel && !showReview && !showLink) return null
 
   async function handleCancel() {
     setIsPending(true)
@@ -42,6 +43,17 @@ function OrderActions({ order }: { order: OrderWithSite }) {
   return (
     <>
       <div className="flex items-center gap-2">
+        {showLink && (
+          <a
+            href={order.published_url!}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-primary underline underline-offset-2 hover:opacity-80 max-w-[180px] truncate"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {order.published_url}
+          </a>
+        )}
         {showEdit && (
           <Button
             variant="outline"
@@ -71,12 +83,8 @@ function OrderActions({ order }: { order: OrderWithSite }) {
         )}
       </div>
 
-      {editOpen && (
-        <EditOrderSheet open={editOpen} onOpenChange={setEditOpen} order={order} />
-      )}
-      {reviewOpen && (
-        <ReviewContentSheet open={reviewOpen} onOpenChange={setReviewOpen} order={order} />
-      )}
+      <EditOrderSheet open={editOpen} onOpenChange={setEditOpen} order={order} />
+      <ReviewContentSheet open={reviewOpen} onOpenChange={setReviewOpen} order={order} />
       {cancelOpen && (
         <ConfirmDialog
           open={cancelOpen}
@@ -99,7 +107,7 @@ export function buildOrderColumns(): ColumnDef<OrderWithSite>[] {
       id: 'domain',
       header: 'Site',
       cell: ({ row }) => (
-        <span className="font-medium">{row.original.site.domain}</span>
+        <span className="font-medium">{row.original.site?.domain ?? '—'}</span>
       ),
     },
     {
