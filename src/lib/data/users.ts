@@ -116,6 +116,19 @@ export async function getActiveClients(
   return data ?? []
 }
 
+export async function getActiveSourcers(
+  supabase: Client,
+): Promise<Pick<User, 'id' | 'first_name' | 'last_name'>[]> {
+  const { data } = await supabase
+    .from('users')
+    .select('id, first_name, last_name')
+    .eq('role', 'sourcer')
+    .eq('status', 'active')
+    .order('first_name')
+
+  return data ?? []
+}
+
 export async function getActiveCopywriters(
   supabase: Client,
   excludeId?: string

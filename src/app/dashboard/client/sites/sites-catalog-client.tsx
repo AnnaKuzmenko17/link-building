@@ -168,21 +168,27 @@ export function SitesCatalogClient({ sites, categories, cartSiteIds }: Props) {
           </Select>
 
           <div className="flex items-center gap-1">
-            <Input
-              type="number"
-              placeholder="Price from"
-              value={priceFrom}
-              onChange={(e) => setPriceFrom(e.target.value)}
-              className="w-28"
-            />
+            <div className="relative">
+              <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+              <Input
+                type="number"
+                placeholder="From"
+                value={priceFrom}
+                onChange={(e) => setPriceFrom(e.target.value)}
+                className="w-28 pl-6"
+              />
+            </div>
             <span className="text-muted-foreground text-sm">–</span>
-            <Input
-              type="number"
-              placeholder="Price to"
-              value={priceTo}
-              onChange={(e) => setPriceTo(e.target.value)}
-              className="w-28"
-            />
+            <div className="relative">
+              <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+              <Input
+                type="number"
+                placeholder="To"
+                value={priceTo}
+                onChange={(e) => setPriceTo(e.target.value)}
+                className="w-28 pl-6"
+              />
+            </div>
           </div>
         </div>
       )}

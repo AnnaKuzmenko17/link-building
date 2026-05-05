@@ -1,17 +1,22 @@
-import { WalletIcon } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
+import { createClient } from '@/lib/supabase/server'
+import { requireSession } from '@/lib/auth/get-session'
+import { getEarnings } from '@/lib/data/earnings'
+import { getActiveSourcers } from '@/lib/data/users'
+import { PageHeader } from '@/components/shared/page-header'
+import { EarningsClient } from '@/app/dashboard/[role]/earnings/earnings-client'
 
-export default function EarningsPage() {
+export default async function AdminEarningsPage() {
+  const { user } = await requireSession()
+  const supabase = await createClient()
+  const [rows, sourcers] = await Promise.all([
+    getEarnings(supabase, { viewerRole: 'admin', viewerId: user.id }),
+    getActiveSourcers(supabase),
+  ])
+
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Earnings</h1>
-      <Card>
-        <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
-          <WalletIcon className="h-10 w-10 text-muted-foreground" />
-          <p className="text-lg font-medium">Coming soon</p>
-          <p className="text-sm text-muted-foreground">The earnings feature is currently under development.</p>
-        </CardContent>
-      </Card>
+      <PageHeader title="Earnings" />
+      <EarningsClient rows={rows} sourcers={sourcers} role="admin" />
     </div>
   )
 }
