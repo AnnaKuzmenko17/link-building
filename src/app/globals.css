@@ -94,3 +94,21 @@
     @apply font-sans;
   }
 }
+
+.chat-messages {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.28 0.02 260) transparent;
+}
+
+.chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background-color: oklch(0.28 0.02 260);
+  border-radius: 9999px;
+}
