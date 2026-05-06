@@ -32,7 +32,7 @@ export function buildCopywriterOrderColumns(): ColumnDef<CopywriterOrder>[] {
     {
       id: 'comments',
       header: 'Comments',
-      cell: ({ row }) => row.original.change_requests.length,
+      cell: ({ row }) => row.original.change_requests.length + (row.original.comment ? 1 : 0),
     },
   ]
 }
