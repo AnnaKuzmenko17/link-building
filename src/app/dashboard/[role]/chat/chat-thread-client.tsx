@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useTransition, useCallback } from 'react'
 import { toast } from 'sonner'
-import { SendHorizontalIcon } from 'lucide-react'
+import { SendHorizontalIcon, ArchiveIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { createClient } from '@/lib/supabase/client'
@@ -44,6 +44,8 @@ export function ChatThreadClient({ chat, initialMessages, currentUserId }: Props
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
+  const isArchived = chat.status === 'archived'
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'instant' })
   }, [])
@@ -74,7 +76,7 @@ export function ChatThreadClient({ chat, initialMessages, currentUserId }: Props
             chat_id: string
             sender_id: string
             body: string
-            status: string
+            read_by: string[]
             created_at: string
           }
 
@@ -94,7 +96,7 @@ export function ChatThreadClient({ chat, initialMessages, currentUserId }: Props
               chat_id: newMsg.chat_id,
               sender_id: newMsg.sender_id,
               body: newMsg.body,
-              status: newMsg.status as 'unread' | 'read',
+              read_by: newMsg.read_by,
               created_at: newMsg.created_at,
               sender,
             },
@@ -112,7 +114,7 @@ export function ChatThreadClient({ chat, initialMessages, currentUserId }: Props
 
   const handleSend = useCallback(() => {
     const trimmed = body.trim()
-    if (!trimmed) return
+    if (!trimmed || isArchived) return
 
     const currentSender = chat.participants.find((p) => p.id === currentUserId) ?? {
       id: currentUserId,
@@ -126,7 +128,7 @@ export function ChatThreadClient({ chat, initialMessages, currentUserId }: Props
       chat_id: chat.id,
       sender_id: currentUserId,
       body: trimmed,
-      status: 'unread',
+      read_by: [],
       created_at: new Date().toISOString(),
       sender: currentSender,
     }
@@ -142,7 +144,7 @@ export function ChatThreadClient({ chat, initialMessages, currentUserId }: Props
         setBody(trimmed)
       }
     })
-  }, [body, chat.id, chat.participants, currentUserId])
+  }, [body, chat.id, chat.participants, currentUserId, isArchived])
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -151,7 +153,11 @@ export function ChatThreadClient({ chat, initialMessages, currentUserId }: Props
     }
   }
 
-  let lastDateLabel = ''
+  const messagesWithLabels = messages.map((msg, i) => {
+    const dateLabel = formatDateLabel(msg.created_at)
+    const prevLabel = i > 0 ? formatDateLabel(messages[i - 1].created_at) : ''
+    return { msg, dateLabel, showDateLabel: dateLabel !== prevLabel }
+  })
 
   return (
     <div className="flex flex-col h-[calc(100vh-220px)] rounded-lg border bg-background">
@@ -161,11 +167,8 @@ export function ChatThreadClient({ chat, initialMessages, currentUserId }: Props
             No messages yet. Start the conversation.
           </p>
         )}
-        {messages.map((msg) => {
+        {messagesWithLabels.map(({ msg, dateLabel, showDateLabel }) => {
           const isOwn = msg.sender_id === currentUserId
-          const dateLabel = formatDateLabel(msg.created_at)
-          const showDateLabel = dateLabel !== lastDateLabel
-          lastDateLabel = dateLabel
 
           return (
             <div key={msg.id}>
@@ -218,26 +221,33 @@ export function ChatThreadClient({ chat, initialMessages, currentUserId }: Props
         <div ref={bottomRef} />
       </div>
 
-      <div className="border-t p-3 flex gap-2 items-end">
-        <Textarea
-          ref={textareaRef}
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Type a message… (Enter to send, Shift+Enter for new line)"
-          rows={1}
-          maxLength={5000}
-          className="resize-none min-h-[40px] max-h-[120px] flex-1"
-        />
-        <Button
-          size="icon"
-          onClick={handleSend}
-          disabled={!body.trim() || isSending}
-          aria-label="Send message"
-        >
-          <SendHorizontalIcon className="size-4" />
-        </Button>
-      </div>
+      {isArchived ? (
+        <div className="border-t px-4 py-3 flex items-center gap-2 text-sm text-muted-foreground bg-muted/30">
+          <ArchiveIcon className="size-4 shrink-0" />
+          <span>This chat is archived. Unarchive it to send messages.</span>
+        </div>
+      ) : (
+        <div className="border-t p-3 flex gap-2 items-end">
+          <Textarea
+            ref={textareaRef}
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Type a message… (Enter to send, Shift+Enter for new line)"
+            rows={1}
+            maxLength={5000}
+            className="resize-none min-h-[40px] max-h-[120px] flex-1"
+          />
+          <Button
+            size="icon"
+            onClick={handleSend}
+            disabled={!body.trim() || isSending}
+            aria-label="Send message"
+          >
+            <SendHorizontalIcon className="size-4" />
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveRole } from '@/lib/resolve-role'
 import { getUserRoleAndStatus, getUserRole, activateUserAndGetRole } from '@/lib/data/users'
-import { createSupportChatForUser } from '@/lib/data/chats'
+import { createSupportChatForUser, createSalesChatForClient } from '@/lib/data/chats'
 import type { Role } from '@/types'
 
 type ActivateResult =
@@ -37,6 +37,9 @@ export async function activateSessionAction(mode: 'first-login' | 'change'): Pro
     if (!role) return { success: false, error: 'Account configuration error. Please contact support.' }
 
     await createSupportChatForUser(adminClient, user.id)
+    if (profile?.role === 'client') {
+      await createSalesChatForClient(adminClient, user.id)
+    }
 
     return { success: true, role }
   }

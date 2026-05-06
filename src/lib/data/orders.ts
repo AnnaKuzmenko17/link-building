@@ -10,12 +10,14 @@ export type OrderWithSite = Order & {
 
 export type OrderWithDetails = Order & {
   site: Pick<Site, 'id' | 'domain'>
-  client: Pick<User, 'id' | 'first_name' | 'last_name'>
+  client: Pick<User, 'id' | 'first_name' | 'last_name'> | null
   copywriter: Pick<User, 'id' | 'first_name' | 'last_name'> | null
 }
 
 export type OrderWithFullDetails = OrderWithDetails & {
-  site: Pick<Site, 'id' | 'domain' | 'dr' | 'category_id' | 'requirements' | 'description' | 'link_type' | 'languages'>
+  site: Pick<Site, 'id' | 'domain' | 'dr' | 'category_id' | 'requirements' | 'description' | 'link_type' | 'languages' | 'countries' | 'top_countries' | 'keywords_relevance' | 'organic_keywords_count' | 'organic_traffic_count'> & {
+    category: { id: string; name: string } | null
+  }
   change_requests: ChangeRequest[]
 }
 
@@ -142,7 +144,7 @@ export async function getOrderById(
 ): Promise<OrderWithFullDetails | null> {
   const { data } = await supabase
     .from('orders')
-    .select('*, site:sites(id, domain, dr, category_id, requirements, description, link_type, languages), client:users!client_id(id, first_name, last_name), copywriter:users!copywriter_id(id, first_name, last_name), change_requests(*)')
+    .select('*, site:sites(id, domain, dr, category_id, requirements, description, link_type, languages, countries, top_countries, keywords_relevance, organic_keywords_count, organic_traffic_count, category:categories!category_id(id, name)), client:users!client_id(id, first_name, last_name), copywriter:users!copywriter_id(id, first_name, last_name), change_requests(*)')
     .eq('id', orderId)
     .maybeSingle()
   return data as unknown as OrderWithFullDetails | null
@@ -184,7 +186,8 @@ export async function publishOrder(
   return { error: error ?? null }
 }
 
-export type CopywriterOrder = OrderWithSite & {
+export type CopywriterOrder = Order & {
+  site: Pick<Site, 'id' | 'domain' | 'dr'>
   change_requests: ChangeRequest[]
 }
 
@@ -194,7 +197,7 @@ export async function getCopywriterOrders(
 ): Promise<CopywriterOrder[]> {
   const { data } = await supabase
     .from('orders')
-    .select('*, site:sites(id, domain), change_requests(*)')
+    .select('*, site:sites(id, domain, dr), change_requests(*)')
     .eq('copywriter_id', copywriterId)
     .order('created_at', { ascending: false })
   return (data ?? []) as unknown as CopywriterOrder[]

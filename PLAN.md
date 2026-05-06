@@ -61,9 +61,9 @@ Create `types/index.ts` with all shared types derived from the database schema:
 - `SiteStatus`: `'pending' | 'active' | 'archived'`
 - `OrderStatus`: `'new' | 'in_progress' | 'content_sent' | 'needs_changes' | 'content_approved' | 'published' | 'completed' | 'canceled'`
 - `InvoiceStatus`: `'draft' | 'sent' | 'paid'`
-- `ChatCategory`: `'support' | 'sales' | 'general'`
-- `MessageStatus`: `'unread' | 'read'`
-- Full entity types: `User` (include `manager_id: string | null`), `Site`, `Order`, `CartItem`, `ChangeRequest`, `Invoice`, `InvoiceItem`, `Chat`, `ChatParticipant`, `Message`
+- `ChatCategory`: `'support' | 'sales' | 'general'` (the UI label for `general` is **Standard**)
+- `ChatStatus`: `'active' | 'archived'`
+- Full entity types: `User` (include `manager_id: string | null`), `Site`, `Order` (include `chat_id: string | null`), `CartItem`, `ChangeRequest`, `Invoice`, `InvoiceItem`, `Chat` (include `created_by: string`, `title: string`, `status: ChatStatus`), `ChatParticipant`, `Message` (include `read_by: string[]`; no `status` field)
 
 ---
 
@@ -76,13 +76,13 @@ Run the following migrations in the Supabase SQL editor in order:
 1. **`users` profile table** — extends `auth.users`. Fields: `id` (references `auth.users`), `email`, `role`, `status`, `first_name`, `last_name`, `manager_id` (references `users`, nullable — only used when `role = 'client'`), `created_at`.
 2. **`sites`** — `id`, `url`, `sourcer_id` (references `users`), `status`, `created_at`, `updated_at`.
 3. **`cart_items`** — `id`, `client_id` (references `users`), `site_id` (references `sites`), `created_at`.
-4. **`orders`** — `id`, `client_id`, `site_id`, `copywriter_id` (nullable), `sourcer_id`, `status`, `publish_month`, `content` (text, nullable), `published_url` (nullable), `created_at`, `updated_at`.
+4. **`orders`** — `id`, `client_id`, `site_id`, `copywriter_id` (nullable), `sourcer_id`, `chat_id` (references `chats`, nullable), `status`, `publish_month`, `content` (text, nullable), `published_url` (nullable), `created_at`, `updated_at`.
 5. **`change_requests`** — `id`, `order_id`, `comment`, `created_by`, `created_at`.
 6. **`invoices`** — `id`, `client_id`, `status`, `billing_period_start`, `billing_period_end`, `created_at`, `updated_at`.
 7. **`invoice_items`** — `id`, `invoice_id`, `order_id`, `amount`.
-8. **`chats`** — `id`, `category`, `created_at`.
+8. **`chats`** — `id`, `created_by` (references `users`, not null), `category` (enum `chat_category`), `title` (text, not null), `status` (enum `chat_status`, default `'active'`), `created_at`. Add a new enum `chat_status` with values `'active' | 'archived'` before creating this table.
 9. **`chat_participants`** — `id`, `chat_id`, `user_id`.
-10. **`messages`** — `id`, `chat_id`, `sender_id`, `body`, `status`, `created_at`.
+10. **`messages`** — `id`, `chat_id`, `sender_id`, `body`, `read_by` (`uuid[]`, not null, default `'{}'`), `created_at`. Do **not** create the `message_status` enum — read state is tracked per-user via `read_by`.
 
 ### Step 2.2 — Create database triggers
 
@@ -125,7 +125,10 @@ Enable RLS on every table. Implement the following policies:
 - Follows same rules as `invoices` via join.
 
 **`chats` / `chat_participants` / `messages` tables:**
-- All authenticated users: read/write access to chats they participate in (use `chat_participants` as the gate).
+- All authenticated users: read access to chats they participate in (use `chat_participants` as the gate).
+- `chats` update policy: only participants of chats with `category = 'general'` may update (covers Edit + Archive/Unarchive). Support/Sales chats are not updatable from the client.
+- `messages` insert policy: requires the user to be a participant of the chat **and** the chat's `status = 'active'`. Archived chats reject new messages at the database level.
+- `messages` update policy (for `read_by`): allow a participant to add their own `auth.uid()` to the array (e.g., via a SECURITY DEFINER function or a constrained policy that only permits self-append).
 
 ### Step 2.4 — Generate Supabase TypeScript types
 
@@ -408,6 +411,8 @@ Run migrations in the Supabase SQL editor:
 - **Create Orders** button (disabled if any item has no month selected).
 - Server Action: create one `order` per cart item (`status = 'new'`), then delete all cart items.
 
+> Note: Sales chat is no longer triggered here. It is now auto-created at first login (Set Password — see Phase 13 §13.6).
+
 ### Step 8.3 — All Orders screen (client)
 
 - Route: `app/dashboard/client/orders/page.tsx`
@@ -428,6 +433,12 @@ Run migrations in the Supabase SQL editor:
 - Trigger: **Cancel** on an order with `status = 'new'`.
 - Show `<ConfirmDialog>`.
 - Server Action: set `status = 'canceled'`.
+
+### Step 8.5b — View Order screen (client)
+
+- Route: `app/dashboard/client/orders/[id]/page.tsx`
+- Display order fields, content (read-only), change requests, publication URL.
+- Include a **Start Chat** button (same Server Action as in §9.2 / §13.9).
 
 ### Step 8.6 — Review Content flow (client)
 
@@ -455,6 +466,7 @@ Run migrations in the Supabase SQL editor:
 
 - Route: `app/dashboard/[role]/orders/[id]/page.tsx`
 - Display all order fields, content (if exists), change requests, and publication URL (if published).
+- Include a **Start Chat** button that calls the order-chat Server Action (Phase 13 §13.9). Behavior: if `order.chat_id` is set, navigate to it; otherwise create a new Standard chat (current user + order copywriter + client's manager, title = site domain), persist `chat_id`, and navigate.
 
 ### Step 9.3 — Assign Copywriter flow
 
@@ -569,40 +581,75 @@ Run migrations in the Supabase SQL editor:
 ### Step 13.1 — All Chats screen
 
 - Route: `app/dashboard/[role]/chat/page.tsx`
-- List all chats the current user participates in, sorted by most recent message.
-- Each row shows: chat category, participants (truncated), last message preview, unread count.
-- Clicking a chat opens the thread.
+- List all chats the current user participates in, sorted by **most recent message activity** (fall back to chat `created_at` when there are no messages).
+- Each row shows: title, category badge (Support / Sales / Standard), status badge (only when `archived`), participants (truncated), last message preview, unread count.
+- Per-row action buttons (visible only on `category = 'general'`):
+  - **Edit** — always (any participant)
+  - **Archive** — when `status = 'active'`
+  - **Unarchive** — when `status = 'archived'`
+- Header-level **Create Chat** button.
+- Filters: category, status, participant name, keyword search.
 
 ### Step 13.2 — Chat Thread screen
 
 - Route: `app/dashboard/[role]/chat/[id]/page.tsx`
-- Display messages in chronological order.
-- Mark messages as `read` when the user views the thread (Server Action or Supabase Realtime).
+- Display messages in chronological order. Show chat title and participants in the header.
+- On view: append the current user's id to `read_by` for every message in the chat where they are not already in `read_by` and they are not the sender. Use a Server Action (or RPC) — `read_by` is a `uuid[]`; use array-append (`array_append`) to avoid duplicates.
 - Message input at the bottom with a **Send** button.
-- Server Action for send: insert `message` with `status = 'unread'`.
+- **If `chat.status = 'archived'`:** hide the input entirely and show a notice ("This chat is archived. Unarchive it to send messages.").
+- Server Action for send: insert `message` with `read_by = '{}'`. Server-side guard: refuse if `chat.status != 'active'` (RLS will also block this).
 
 ### Step 13.3 — Realtime updates
 
 - Use Supabase Realtime to subscribe to new messages in the current chat.
 - On new message: append to the thread without a full page reload.
-- Update unread counts in the All Chats list in real time.
+- Update unread counts in the All Chats list in real time (compute from `read_by`).
 
 ### Step 13.4 — Create Chat flow
 
 - Trigger: **Create Chat** button on All Chats screen.
-- `<Dialog>` with fields: participant selector (`<Combobox>` with user search), category (`<Select>`).
-- Server Action: insert `chat` and `chat_participants` rows for all selected users + current user.
+- `<Dialog>` or `<Sheet>` with fields:
+  - **Users** — `<Combobox>` multi-select with user search. Required. Validation: at least 1 selected (the creator is added automatically, satisfying the "≥2 users" rule).
+  - **Title** — text input. Required. Default value computed from selected participant names; updates live as the user changes the participant set.
+- Category is fixed to `general`; not shown in the form.
+- Server Action: insert `chat` (`category = 'general'`, `status = 'active'`, `created_by = auth.uid()`, `title`) and `chat_participants` rows for all selected users + current user. Reject if total participants < 2.
 
 ### Step 13.5 — Auto-create Support Chat
 
 - Trigger: called from the **Set Password** Server Action (Phase 3, Step 3.2) after first login is complete.
-- Server Action (using service role key): fetch all users with `role = 'admin'` → create a `chat` with `category = 'support'` → insert `chat_participants` for the new user + all admins.
+- Server Action (using service role key): fetch all active users with `role = 'admin'` → create a `chat` with `category = 'support'`, `status = 'active'`, `title = 'Support'`, `created_by = <new user id>` → insert `chat_participants` for the new user + all admins.
 
 ### Step 13.6 — Auto-create Sales Chat
 
-- Trigger: called from the **Create Orders** Server Action (Phase 8, Step 8.2) when the client's order count goes from 0 to 1.
-- Server Action: fetch all users with `role = 'manager'` → create a `chat` with `category = 'sales'` → insert `chat_participants` for the client + all managers.
-- Only create this chat once per client. Check if a `sales` chat already exists for the client before creating.
+- Trigger: called from the **Set Password** Server Action (Phase 3, Step 3.2) after first login is complete — alongside the Support chat. **Only runs when the new user's role is `client`.**
+- Server Action: read the new client's `manager_id` from the `users` table. If present, create a `chat` with `category = 'sales'`, `status = 'active'`, `title = 'Sales'`, `created_by = <client id>` → insert `chat_participants` for **the client + the assigned manager only** (no other managers).
+- If `manager_id` is null, skip creation and log a warning (per global rule #13, this should not happen).
+- Idempotent: check if a `sales` chat already includes this client before creating.
+
+### Step 13.7 — Edit Chat flow
+
+- Trigger: **Edit** button on All Chats row or in the Chat header. Visible only for `category = 'general'`.
+- `<Sheet>` with the same form as §13.4, pre-filled with current `title` and participants.
+- Server Action: update `chats.title`; diff participants and insert/delete rows in `chat_participants` accordingly. Validate: at least 2 total participants; current user must remain a participant.
+- Refuse server-side if `chat.category != 'general'`.
+
+### Step 13.8 — Archive / Unarchive Chat flow
+
+- Triggers: **Archive** / **Unarchive** buttons (Standard chats only).
+- Show `<ConfirmDialog>` with a read-only disclaimer (e.g., "Archiving will prevent new messages until the chat is unarchived.").
+- Server Action: update `chats.status` between `'active'` and `'archived'`. Refuse if `chat.category != 'general'`.
+
+### Step 13.9 — Start Chat from Order
+
+- Trigger: **Start Chat** button on the View Order screen (Phase 8 §8.5b for client; Phase 9 §9.2 for manager/admin; also available to copywriters on their order detail).
+- Server Action `startOrderChatAction(orderId)`:
+  1. Read the order. If `order.chat_id` is set, return that id (caller navigates).
+  2. Otherwise, gather participant ids: current user, `order.copywriter_id` (if assigned), and the order client's `manager_id` (if set). Deduplicate.
+  3. Refuse if fewer than 2 unique participants would result.
+  4. Create a `chat` with `category = 'general'`, `status = 'active'`, `title = <order site domain>`, `created_by = auth.uid()`. Insert `chat_participants`.
+  5. Update `orders.chat_id` to the new chat id.
+  6. Return the chat id.
+- Caller navigates to `/dashboard/[role]/chat/[id]`.
 
 ---
 
@@ -617,6 +664,7 @@ Run migrations in the Supabase SQL editor:
 
 - Ensure no Server Action allows an illegal status transition (e.g., `new` → `content_approved`).
 - Add a shared `assertOrderStatus(order, allowedStatuses[])` utility used in every order-related Server Action.
+- Verify chat write guards: inserting a message into a chat with `status = 'archived'` must be rejected (test via raw Supabase client with a participant JWT). Editing/archiving a chat with `category != 'general'` must be rejected.
 
 ### Step 14.3 — Audit route protection
 

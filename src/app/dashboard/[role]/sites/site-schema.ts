@@ -1,7 +1,16 @@
 import { z } from 'zod'
 
 export const siteSchema = z.object({
-  domain: z.string().url('Enter a valid URL'),
+  domain: z
+    .string()
+    .min(1, 'Domain is required')
+    .transform((v) => v.replace(/^https?:\/\//i, '').replace(/\/.*$/, '').trim())
+    .pipe(
+      z.string().regex(
+        /^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i,
+        'Enter a valid domain (e.g. example.com)'
+      )
+    ),
   dr: z.coerce.number().int().min(0).max(100, 'DR must be 0–100'),
   category_id: z.string().uuid('Select a category'),
   top_countries: z.string().min(1, 'Top countries is required'),

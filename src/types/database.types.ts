@@ -155,19 +155,36 @@ export type Database = {
         Row: {
           category: Database["public"]["Enums"]["chat_category"]
           created_at: string
+          created_by: string | null
           id: string
+          status: Database["public"]["Enums"]["chat_status"]
+          title: string
         }
         Insert: {
           category: Database["public"]["Enums"]["chat_category"]
           created_at?: string
+          created_by?: string | null
           id?: string
+          status?: Database["public"]["Enums"]["chat_status"]
+          title?: string
         }
         Update: {
           category?: Database["public"]["Enums"]["chat_category"]
           created_at?: string
+          created_by?: string | null
           id?: string
+          status?: Database["public"]["Enums"]["chat_status"]
+          title?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "chats_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       invoice_items: {
         Row: {
@@ -249,24 +266,24 @@ export type Database = {
           chat_id: string
           created_at: string
           id: string
+          read_by: string[]
           sender_id: string
-          status: Database["public"]["Enums"]["message_status"]
         }
         Insert: {
           body: string
           chat_id: string
           created_at?: string
           id?: string
+          read_by?: string[]
           sender_id: string
-          status?: Database["public"]["Enums"]["message_status"]
         }
         Update: {
           body?: string
           chat_id?: string
           created_at?: string
           id?: string
+          read_by?: string[]
           sender_id?: string
-          status?: Database["public"]["Enums"]["message_status"]
         }
         Relationships: [
           {
@@ -287,6 +304,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          chat_id: string | null
           client_id: string
           comment: string | null
           content: string | null
@@ -302,6 +320,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          chat_id?: string | null
           client_id: string
           comment?: string | null
           content?: string | null
@@ -317,6 +336,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          chat_id?: string | null
           client_id?: string
           comment?: string | null
           content?: string | null
@@ -332,6 +352,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "orders_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "chats"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "orders_client_id_fkey"
             columns: ["client_id"]
@@ -536,12 +563,16 @@ export type Database = {
         Returns: Database["public"]["Enums"]["role"]
       }
       is_chat_participant: { Args: { p_chat_id: string }; Returns: boolean }
+      sourcer_can_access_invoice: {
+        Args: { invoice_uuid: string }
+        Returns: boolean
+      }
     }
     Enums: {
       chat_category: "support" | "sales" | "general"
+      chat_status: "active" | "archived"
       invoice_status: "draft" | "sent" | "paid"
       link_type: "dofollow" | "nofollow" | "sponsored" | "ugc"
-      message_status: "unread" | "read"
       order_status:
         | "new"
         | "in_progress"
@@ -682,9 +713,9 @@ export const Constants = {
   public: {
     Enums: {
       chat_category: ["support", "sales", "general"],
+      chat_status: ["active", "archived"],
       invoice_status: ["draft", "sent", "paid"],
       link_type: ["dofollow", "nofollow", "sponsored", "ugc"],
-      message_status: ["unread", "read"],
       order_status: [
         "new",
         "in_progress",

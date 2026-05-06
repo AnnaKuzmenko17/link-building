@@ -64,5 +64,5 @@ SUPABASE_SECRET_KEY             # server-only, admin operations (replaces legacy
 BREVO_API_KEY                   # server-only, used to send resend-invite emails via Brevo REST API
 BREVO_SENDER_EMAIL              # verified sender email address in Brevo
 BREVO_SENDER_NAME               # sender display name (optional, defaults to "Linkbuilding")
-APP_URL                         # server-only, canonical origin for email redirect links (e.g. https://app.example.com). Falls back to VERCEL_URL then localhost:3000.
+VERCEL_URL                      # set automatically on Vercel; used to build email redirect URLs. Falls back to http://localhost:3000.
 ```

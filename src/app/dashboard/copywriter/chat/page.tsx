@@ -12,7 +12,7 @@ export default async function CopywriterChatPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Chat" />
-      <ChatListClient chats={chats} userId={user.id} role="copywriter" />
+      <ChatListClient chats={chats} userId={user.id} role="copywriter" canCreate={true} />
     </div>
   )
 }

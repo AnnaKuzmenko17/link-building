@@ -12,7 +12,7 @@ export default async function SourcerChatPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Chat" />
-      <ChatListClient chats={chats} userId={user.id} role="sourcer" />
+      <ChatListClient chats={chats} userId={user.id} role="sourcer" canCreate={true} />
     </div>
   )
 }

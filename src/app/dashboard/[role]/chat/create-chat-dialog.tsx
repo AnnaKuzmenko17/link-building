@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useCallback } from 'react'
+import { useState, useTransition, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { XIcon } from 'lucide-react'
@@ -12,16 +12,10 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { createChatAction, searchUsersAction } from './actions'
+import { createChatAction, editChatAction, searchUsersAction } from './actions'
+import type { ChatDetail } from '@/lib/data/chats'
 
 interface User {
   id: string
@@ -35,16 +29,64 @@ interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   role: string
+  currentUserId: string
+  /** When provided, the dialog is in edit mode */
+  editChat?: ChatDetail
 }
 
-export function CreateChatDialog({ open, onOpenChange, role }: Props) {
+function userName(u: User) {
+  return `${u.first_name} ${u.last_name}`.trim() || u.email
+}
+
+function defaultTitle(selected: User[]): string {
+  return selected.map(userName).join(', ')
+}
+
+export function CreateChatDialog({ open, onOpenChange, role, currentUserId, editChat }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  const [category, setCategory] = useState('')
+  const [title, setTitle] = useState('')
+  const [titleTouched, setTitleTouched] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<User[]>([])
   const [selected, setSelected] = useState<User[]>([])
   const [searching, setSearching] = useState(false)
+
+  const isEdit = !!editChat
+
+  // Populate for edit mode
+  useEffect(() => {
+    if (!open) return
+    if (editChat) {
+      setTitle(editChat.title)
+      setTitleTouched(true)
+      // Populate selected from participants excluding current user
+      setSelected(
+        editChat.participants
+          .filter((p) => p.id !== currentUserId)
+          .map((p) => ({
+            id: p.id,
+            first_name: p.first_name,
+            last_name: p.last_name,
+            email: '',
+            role: '',
+          }))
+      )
+    } else {
+      setTitle('')
+      setTitleTouched(false)
+      setSelected([])
+    }
+    setSearchQuery('')
+    setSearchResults([])
+  }, [open, editChat, currentUserId])
+
+  // Auto-generate title from participants when not manually set
+  useEffect(() => {
+    if (!titleTouched && !isEdit) {
+      setTitle(defaultTitle(selected))
+    }
+  }, [selected, titleTouched, isEdit])
 
   const handleSearch = useCallback(async (query: string) => {
     setSearchQuery(query)
@@ -59,7 +101,7 @@ export function CreateChatDialog({ open, onOpenChange, role }: Props) {
   }, [])
 
   function selectUser(user: User) {
-    if (!selected.find((u) => u.id === user.id)) {
+    if (!selected.find((u) => u.id === user.id) && user.id !== currentUserId) {
       setSelected((prev) => [...prev, user])
     }
     setSearchQuery('')
@@ -71,31 +113,42 @@ export function CreateChatDialog({ open, onOpenChange, role }: Props) {
   }
 
   function handleClose() {
-    setCategory('')
-    setSearchQuery('')
-    setSearchResults([])
-    setSelected([])
     onOpenChange(false)
   }
 
   function handleSubmit() {
-    if (!category) {
-      toast.error('Please select a category.')
+    if (!title.trim()) {
+      toast.error('Title is required.')
       return
     }
     if (selected.length === 0) {
-      toast.error('Select at least one participant.')
+      toast.error('Select at least one other participant.')
       return
     }
     startTransition(async () => {
-      const result = await createChatAction(category, selected.map((u) => u.id))
-      if (!result.success) {
-        toast.error(result.error)
-        return
+      if (isEdit) {
+        const result = await editChatAction(
+          editChat!.id,
+          title,
+          selected.map((u) => u.id)
+        )
+        if (!result.success) {
+          toast.error(result.error)
+          return
+        }
+        toast.success('Chat updated.')
+        handleClose()
+        router.refresh()
+      } else {
+        const result = await createChatAction(selected.map((u) => u.id), title)
+        if (!result.success) {
+          toast.error(result.error)
+          return
+        }
+        toast.success('Chat created.')
+        handleClose()
+        router.push(`/dashboard/${role}/chat/${result.chatId}`)
       }
-      toast.success('Chat created.')
-      handleClose()
-      router.push(`/dashboard/${role}/chat/${result.chatId}`)
     })
   }
 
@@ -103,22 +156,22 @@ export function CreateChatDialog({ open, onOpenChange, role }: Props) {
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>New Chat</DialogTitle>
+          <DialogTitle>{isEdit ? 'Edit Chat' : 'New Chat'}</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-4 py-2">
           <div className="flex flex-col gap-1.5">
-            <Label>Category</Label>
-            <Select value={category} onValueChange={(v) => setCategory(v ?? '')}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="support">Support</SelectItem>
-                <SelectItem value="sales">Sales</SelectItem>
-                <SelectItem value="general">General</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label htmlFor="chat-title">Title</Label>
+            <Input
+              id="chat-title"
+              placeholder="Chat title…"
+              value={title}
+              onChange={(e) => {
+                setTitle(e.target.value)
+                setTitleTouched(true)
+              }}
+              maxLength={200}
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -130,7 +183,7 @@ export function CreateChatDialog({ open, onOpenChange, role }: Props) {
                     key={u.id}
                     className="flex items-center gap-1 rounded-full bg-secondary px-2.5 py-0.5 text-sm"
                   >
-                    {`${u.first_name} ${u.last_name}`.trim() || u.email}
+                    {userName(u)}
                     <button
                       type="button"
                       onClick={() => removeUser(u.id)}
@@ -159,7 +212,7 @@ export function CreateChatDialog({ open, onOpenChange, role }: Props) {
                   )}
                   {!searching &&
                     searchResults
-                      .filter((u) => !selected.find((s) => s.id === u.id))
+                      .filter((u) => u.id !== currentUserId && !selected.find((s) => s.id === u.id))
                       .map((u) => (
                         <button
                           key={u.id}
@@ -185,8 +238,11 @@ export function CreateChatDialog({ open, onOpenChange, role }: Props) {
           <Button variant="outline" onClick={handleClose} disabled={isPending}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isPending || !category || selected.length === 0}>
-            {isPending ? 'Creating…' : 'Create Chat'}
+          <Button
+            onClick={handleSubmit}
+            disabled={isPending || !title.trim() || selected.length === 0}
+          >
+            {isPending ? (isEdit ? 'Saving…' : 'Creating…') : (isEdit ? 'Save' : 'Create Chat')}
           </Button>
         </DialogFooter>
       </DialogContent>

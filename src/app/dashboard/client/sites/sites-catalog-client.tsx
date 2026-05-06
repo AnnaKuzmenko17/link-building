@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useTransition, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { SlidersHorizontalIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -31,6 +32,8 @@ const LINK_TYPE_OPTIONS: { value: LinkType; label: string }[] = [
 ]
 
 export function SitesCatalogClient({ sites, categories, cartSiteIds }: Props) {
+  const router = useRouter()
+  const [, startTransition] = useTransition()
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [filterCategory, setFilterCategory] = useState('')
@@ -63,6 +66,15 @@ export function SitesCatalogClient({ sites, categories, cartSiteIds }: Props) {
   const columns = useMemo(
     () => buildSiteCatalogColumns(cartSiteIds),
     [cartSiteIds],
+  )
+
+  const handleRowClick = useCallback(
+    (site: SiteWithRelations) => {
+      startTransition(() => {
+        router.push(`/dashboard/client/sites/${site.id}`)
+      })
+    },
+    [router, startTransition],
   )
 
   const hasActiveFilters = !!(search || filterCategory || filterCountry || filterLanguage || filterLinkType || priceFrom || priceTo)
@@ -193,7 +205,7 @@ export function SitesCatalogClient({ sites, categories, cartSiteIds }: Props) {
         </div>
       )}
 
-      <DataTable columns={columns} data={filtered} />
+      <DataTable columns={columns} data={filtered} onRowClick={handleRowClick} />
     </div>
   )
 }

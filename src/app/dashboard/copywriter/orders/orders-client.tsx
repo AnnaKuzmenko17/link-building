@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { SlidersHorizontalIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -31,6 +32,7 @@ const STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
 const columns = buildCopywriterOrderColumns()
 
 export function CopywriterOrdersClient({ orders }: Props) {
+  const router = useRouter()
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [filterStatus, setFilterStatus] = useState('')
 
@@ -86,7 +88,11 @@ export function CopywriterOrdersClient({ orders }: Props) {
         </div>
       )}
 
-      <DataTable columns={columns} data={filtered} />
+      <DataTable
+        columns={columns}
+        data={filtered}
+        onRowClick={(order) => router.push(`/dashboard/copywriter/orders/${order.id}`)}
+      />
     </div>
   )
 }

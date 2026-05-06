@@ -11,6 +11,8 @@ const MANAGER_ALLOWED_ROLES: Role[] = ['client', 'copywriter', 'sourcer']
 const ALL_ROLES: Role[] = ['client', 'manager', 'copywriter', 'sourcer', 'admin']
 
 const inviteSchema = z.object({
+  first_name: z.string().min(1, 'First name is required'),
+  last_name: z.string().min(1, 'Last name is required'),
   email: z.string().email('Enter a valid email address'),
   role: z.enum(['client', 'manager', 'copywriter', 'sourcer', 'admin']),
   manager_id: z.string().uuid().optional(),
@@ -19,6 +21,8 @@ const inviteSchema = z.object({
 type InviteResult = { success: true } | { success: false; error: string }
 
 export async function inviteUserAction(input: {
+  first_name: string
+  last_name: string
   email: string
   role: string
   manager_id?: string
@@ -34,7 +38,7 @@ export async function inviteUserAction(input: {
     return { success: false, error: parsed.error.issues[0]?.message ?? 'Invalid input.' }
   }
 
-  const { email, role, manager_id } = parsed.data
+  const { first_name, last_name, email, role, manager_id } = parsed.data
 
   const allowedRoles = viewerRole === 'manager' ? MANAGER_ALLOWED_ROLES : ALL_ROLES
   if (!allowedRoles.includes(role as Role)) {
@@ -59,7 +63,7 @@ export async function inviteUserAction(input: {
   // The trigger handle_new_user() auto-inserts the public.users profile row
   // on auth.users insert, reading role and manager_id from raw_user_meta_data.
   const { error: authError } = await adminClient.auth.admin.inviteUserByEmail(email, {
-    data: { role, manager_id: resolvedManagerId ?? null },
+    data: { first_name, last_name, role, manager_id: resolvedManagerId ?? null },
     redirectTo: `${getAppUrl()}/auth/set-password`,
   })
 

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database.types'
-import type { ChatCategory } from '@/types'
+import type { ChatCategory, ChatStatus } from '@/types'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 type Client = SupabaseClient<Database>
 
@@ -14,6 +15,8 @@ export type ChatParticipantUser = {
 export type ChatWithPreview = {
   id: string
   category: ChatCategory
+  status: ChatStatus
+  title: string
   created_at: string
   participants: ChatParticipantUser[]
   last_message: {
@@ -29,7 +32,7 @@ export type MessageWithSender = {
   chat_id: string
   sender_id: string
   body: string
-  status: 'unread' | 'read'
+  read_by: string[]
   created_at: string
   sender: ChatParticipantUser
 }
@@ -37,6 +40,8 @@ export type MessageWithSender = {
 export type ChatDetail = {
   id: string
   category: ChatCategory
+  status: ChatStatus
+  title: string
   created_at: string
   participants: ChatParticipantUser[]
 }
@@ -56,9 +61,8 @@ export async function getChatsForUser(
 
   const { data: chats } = await supabase
     .from('chats')
-    .select('id, category, created_at')
+    .select('id, category, status, title, created_at')
     .in('id', chatIds)
-    .order('created_at', { ascending: false })
 
   if (!chats || chats.length === 0) return []
 
@@ -69,7 +73,7 @@ export async function getChatsForUser(
 
   const { data: allMessages } = await supabase
     .from('messages')
-    .select('id, chat_id, body, created_at, sender_id, status')
+    .select('id, chat_id, body, created_at, sender_id, read_by')
     .in('chat_id', chatIds)
     .order('created_at', { ascending: false })
 
@@ -82,12 +86,14 @@ export async function getChatsForUser(
     const chatMessages = (allMessages ?? []).filter((m) => m.chat_id === chat.id)
     const lastMessage = chatMessages[0] ?? null
     const unreadCount = chatMessages.filter(
-      (m) => m.status === 'unread' && m.sender_id !== userId
+      (m) => m.sender_id !== userId && !m.read_by.includes(userId)
     ).length
 
     return {
       id: chat.id,
       category: chat.category as ChatCategory,
+      status: chat.status as ChatStatus,
+      title: chat.title,
       created_at: chat.created_at,
       participants: chatParticipants,
       last_message: lastMessage
@@ -118,7 +124,7 @@ export async function getChatById(
 
   const { data: chat } = await supabase
     .from('chats')
-    .select('id, category, created_at')
+    .select('id, category, status, title, created_at')
     .eq('id', chatId)
     .maybeSingle()
 
@@ -132,6 +138,8 @@ export async function getChatById(
   return {
     id: chat.id,
     category: chat.category as ChatCategory,
+    status: chat.status as ChatStatus,
+    title: chat.title,
     created_at: chat.created_at,
     participants: (participants ?? [])
       .map((p) => p.users as ChatParticipantUser)
@@ -145,7 +153,7 @@ export async function getMessagesForChat(
 ): Promise<MessageWithSender[]> {
   const { data } = await supabase
     .from('messages')
-    .select('id, chat_id, sender_id, body, status, created_at, users(id, first_name, last_name, avatar_url)')
+    .select('id, chat_id, sender_id, body, read_by, created_at, users(id, first_name, last_name, avatar_url)')
     .eq('chat_id', chatId)
     .order('created_at', { ascending: true })
 
@@ -156,7 +164,7 @@ export async function getMessagesForChat(
     chat_id: m.chat_id,
     sender_id: m.sender_id,
     body: m.body,
-    status: m.status as 'unread' | 'read',
+    read_by: m.read_by,
     created_at: m.created_at,
     sender: m.users as ChatParticipantUser,
   }))
@@ -170,8 +178,8 @@ export async function sendMessage(
 ): Promise<{ data: MessageWithSender | null; error: string | null }> {
   const { data, error } = await supabase
     .from('messages')
-    .insert({ chat_id: chatId, sender_id: senderId, body, status: 'unread' })
-    .select('id, chat_id, sender_id, body, status, created_at, users(id, first_name, last_name, avatar_url)')
+    .insert({ chat_id: chatId, sender_id: senderId, body, read_by: [] })
+    .select('id, chat_id, sender_id, body, read_by, created_at, users(id, first_name, last_name, avatar_url)')
     .single()
 
   if (error || !data) return { data: null, error: error?.message ?? 'Failed to send.' }
@@ -182,7 +190,7 @@ export async function sendMessage(
       chat_id: data.chat_id,
       sender_id: data.sender_id,
       body: data.body,
-      status: data.status as 'unread' | 'read',
+      read_by: data.read_by,
       created_at: data.created_at,
       sender: data.users as ChatParticipantUser,
     },
@@ -195,27 +203,22 @@ export async function markMessagesRead(
   chatId: string,
   userId: string
 ): Promise<void> {
-  await supabase
-    .from('messages')
-    .update({ status: 'read' })
-    .eq('chat_id', chatId)
-    .eq('status', 'unread')
-    .neq('sender_id', userId)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase.rpc as any)('mark_messages_read', { p_chat_id: chatId, p_user_id: userId })
 }
 
 export async function createChat(
   supabase: Client,
   category: ChatCategory,
-  participantIds: string[]
+  participantIds: string[],
+  title: string,
+  createdBy: string
 ): Promise<{ chatId: string | null; error: string | null }> {
-  // Generate the UUID upfront so we can insert participants before trying to
-  // read the chat row back — the chats_select RLS policy calls is_chat_participant,
-  // which would fail if we did insert+select before participants exist.
   const chatId = crypto.randomUUID()
 
   const { error: chatError } = await supabase
     .from('chats')
-    .insert({ id: chatId, category })
+    .insert({ id: chatId, category, title, created_by: createdBy, status: 'active' })
 
   if (chatError) return { chatId: null, error: chatError.message }
 
@@ -227,19 +230,133 @@ export async function createChat(
   return { chatId, error: null }
 }
 
+export async function updateChat(
+  supabase: Client,
+  chatId: string,
+  title: string,
+  participantIds: string[]
+): Promise<{ error: string | null }> {
+  const { error: titleError } = await supabase
+    .from('chats')
+    .update({ title })
+    .eq('id', chatId)
+    .eq('category', 'general')
+
+  if (titleError) return { error: titleError.message }
+
+  const { data: existing } = await supabase
+    .from('chat_participants')
+    .select('user_id')
+    .eq('chat_id', chatId)
+
+  const existingIds = new Set((existing ?? []).map((p) => p.user_id))
+  const newIds = new Set(participantIds)
+
+  const toAdd = participantIds.filter((id) => !existingIds.has(id))
+  const toRemove = [...existingIds].filter((id) => !newIds.has(id))
+
+  if (toAdd.length > 0) {
+    const { error } = await supabase
+      .from('chat_participants')
+      .insert(toAdd.map((uid) => ({ chat_id: chatId, user_id: uid })))
+    if (error) return { error: error.message }
+  }
+
+  if (toRemove.length > 0) {
+    const { error } = await supabase
+      .from('chat_participants')
+      .delete()
+      .eq('chat_id', chatId)
+      .in('user_id', toRemove)
+    if (error) return { error: error.message }
+  }
+
+  return { error: null }
+}
+
+export async function setChatStatus(
+  supabase: Client,
+  chatId: string,
+  status: ChatStatus
+): Promise<{ error: string | null }> {
+  const { error } = await supabase
+    .from('chats')
+    .update({ status })
+    .eq('id', chatId)
+    .eq('category', 'general')
+
+  return { error: error?.message ?? null }
+}
+
 export async function searchUsersForChat(
   supabase: Client,
-  query: string
+  query: string,
+  callerRole: string,
+  callerId: string,
 ): Promise<{ id: string; first_name: string; last_name: string; email: string; role: string }[]> {
-  const q = `%${query.trim()}%`
-  const { data } = await supabase
-    .from('users')
-    .select('id, first_name, last_name, email, role')
-    .eq('status', 'active')
-    .or(`first_name.ilike.${q},last_name.ilike.${q},email.ilike.${q}`)
-    .limit(20)
+  if (callerRole === 'client') return []
 
-  return data ?? []
+  // Use admin client so RLS doesn't block lookups of other users
+  const admin = createAdminClient()
+  const q = `%${query.trim()}%`
+  const baseQuery = () =>
+    admin
+      .from('users')
+      .select('id, first_name, last_name, email, role')
+      .eq('status', 'active')
+      .or(`first_name.ilike.${q},last_name.ilike.${q},email.ilike.${q}`)
+      .limit(20)
+
+  if (callerRole === 'admin') {
+    const { data } = await baseQuery()
+    return data ?? []
+  }
+
+  if (callerRole === 'manager') {
+    const { data } = await baseQuery().eq('role', 'copywriter')
+    return data ?? []
+  }
+
+  if (callerRole === 'sourcer') {
+    const { data } = await baseQuery().eq('role', 'admin')
+    return data ?? []
+  }
+
+  if (callerRole === 'copywriter') {
+    // orders RLS allows copywriter to read their own orders — use regular client
+    const { data: orders } = await supabase
+      .from('orders')
+      .select('client_id')
+      .eq('copywriter_id', callerId)
+      .not('client_id', 'is', null)
+
+    const clientIds = [...new Set((orders ?? []).map((o) => o.client_id as string))]
+
+    let managerIds: string[] = []
+    if (clientIds.length > 0) {
+      const { data: clients } = await admin
+        .from('users')
+        .select('manager_id')
+        .in('id', clientIds)
+        .not('manager_id', 'is', null)
+      managerIds = [...new Set((clients ?? []).map((c) => c.manager_id as string))]
+    }
+
+    const { data: admins } = await admin
+      .from('users')
+      .select('id')
+      .eq('role', 'admin')
+      .eq('status', 'active')
+    const adminIds = (admins ?? []).map((a) => a.id)
+
+    const allowedIds = [...new Set([...managerIds, ...adminIds])]
+    if (allowedIds.length === 0) return []
+
+    const { data } = await baseQuery().in('id', allowedIds)
+    return data ?? []
+  }
+
+  return []
 }
 
 export async function createSupportChatForUser(
@@ -254,21 +371,53 @@ export async function createSupportChatForUser(
 
   if (!admins || admins.length === 0) return
 
-  const participantIds = [newUserId, ...admins.map((a) => a.id)]
-  await createChat(supabase, 'support', participantIds)
+  const participantIds = Array.from(new Set([newUserId, ...admins.map((a) => a.id)]))
+  await createChat(supabase, 'support', participantIds, 'Support', newUserId)
+}
+
+export async function ensureDefaultChatsForClient(
+  supabase: Client,
+  clientUserId: string,
+): Promise<void> {
+  const { data: participations } = await supabase
+    .from('chat_participants')
+    .select('chat_id')
+    .eq('user_id', clientUserId)
+
+  const chatIds = (participations ?? []).map((p) => p.chat_id)
+
+  let hasSupport = false
+  let hasSales = false
+
+  if (chatIds.length > 0) {
+    const { data: existing } = await supabase
+      .from('chats')
+      .select('category')
+      .in('id', chatIds)
+      .in('category', ['support', 'sales'])
+
+    for (const c of existing ?? []) {
+      if (c.category === 'support') hasSupport = true
+      if (c.category === 'sales') hasSales = true
+    }
+  }
+
+  if (!hasSupport) await createSupportChatForUser(supabase, clientUserId)
+  if (!hasSales) await createSalesChatForClient(supabase, clientUserId)
 }
 
 export async function createSalesChatForClient(
   supabase: Client,
   clientUserId: string
 ): Promise<void> {
-  const existing = await supabase
+  // Check if a sales chat already exists for this client
+  const { data: clientParticipations } = await supabase
     .from('chat_participants')
     .select('chat_id')
     .eq('user_id', clientUserId)
 
-  if (existing.data && existing.data.length > 0) {
-    const chatIds = existing.data.map((p) => p.chat_id)
+  if (clientParticipations && clientParticipations.length > 0) {
+    const chatIds = clientParticipations.map((p) => p.chat_id)
     const { data: salesChats } = await supabase
       .from('chats')
       .select('id')
@@ -278,16 +427,20 @@ export async function createSalesChatForClient(
     if (salesChats && salesChats.length > 0) return
   }
 
-  const { data: managers } = await supabase
+  // Get the client's assigned manager
+  const { data: client } = await supabase
     .from('users')
-    .select('id')
-    .eq('role', 'manager')
-    .eq('status', 'active')
+    .select('manager_id')
+    .eq('id', clientUserId)
+    .maybeSingle()
 
-  if (!managers || managers.length === 0) return
+  if (!client?.manager_id) {
+    console.warn('[createSalesChatForClient] client has no manager_id, skipping')
+    return
+  }
 
-  const participantIds = [clientUserId, ...managers.map((m) => m.id)]
-  await createChat(supabase, 'sales', participantIds)
+  const participantIds = [clientUserId, client.manager_id]
+  await createChat(supabase, 'sales', participantIds, 'Sales', clientUserId)
 }
 
 export async function ensureManagerInClientSalesChat(
@@ -327,4 +480,47 @@ export async function ensureManagerInClientSalesChat(
       user_id: managerId,
     })
   }
+}
+
+export async function startOrderChat(
+  supabase: Client,
+  orderId: string,
+  currentUserId: string
+): Promise<{ chatId: string | null; error: string | null }> {
+  // Read order with site domain and client's manager
+  const { data: order } = await supabase
+    .from('orders')
+    .select('id, chat_id, copywriter_id, client_id, sites(domain), users!orders_client_id_fkey(manager_id)')
+    .eq('id', orderId)
+    .maybeSingle()
+
+  if (!order) return { chatId: null, error: 'Order not found.' }
+
+  if (order.chat_id) return { chatId: order.chat_id, error: null }
+
+  const site = order.sites as { domain: string } | null
+  const clientUser = order.users as { manager_id: string | null } | null
+  const title = site?.domain ?? 'Order Chat'
+
+  const participantIds = Array.from(
+    new Set(
+      [
+        currentUserId,
+        order.copywriter_id,
+        order.client_id,
+        clientUser?.manager_id,
+      ].filter((id): id is string => !!id)
+    )
+  )
+
+  if (participantIds.length < 2) {
+    return { chatId: null, error: 'Not enough participants to create a chat.' }
+  }
+
+  const { chatId, error } = await createChat(supabase, 'general', participantIds, title, currentUserId)
+  if (error || !chatId) return { chatId: null, error: error ?? 'Failed to create chat.' }
+
+  await supabase.from('orders').update({ chat_id: chatId }).eq('id', orderId)
+
+  return { chatId, error: null }
 }

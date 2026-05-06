@@ -12,7 +12,7 @@ export default async function ManagerChatPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Chat" />
-      <ChatListClient chats={chats} userId={user.id} role="manager" />
+      <ChatListClient chats={chats} userId={user.id} role="manager" canCreate={true} />
     </div>
   )
 }

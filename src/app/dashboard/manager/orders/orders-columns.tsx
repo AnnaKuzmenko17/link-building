@@ -97,7 +97,7 @@ export function buildManagerOrderColumns(
       id: 'client',
       header: 'Client',
       cell: ({ row }) =>
-        `${row.original.client.first_name} ${row.original.client.last_name}`,
+        row.original.client ? `${row.original.client.first_name} ${row.original.client.last_name}` : '—',
     },
     {
       id: 'copywriter',

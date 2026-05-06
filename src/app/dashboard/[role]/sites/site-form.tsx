@@ -52,6 +52,7 @@ export function SiteForm({ categories, site, backHref, isSourcer = false, isAdmi
     control,
     watch,
     setValue,
+    setError,
     formState: { errors },
   } = useForm<SiteFormInput, unknown, SiteFormValues>({
     resolver: zodResolver(siteSchema) as Resolver<SiteFormInput, unknown, SiteFormValues>,
@@ -116,7 +117,11 @@ export function SiteForm({ categories, site, backHref, isSourcer = false, isAdmi
     setIsPending(false)
 
     if (!result.success) {
-      toast.error(result.error)
+      if (result.error === 'A site with this domain already exists.') {
+        setError('domain', { message: result.error })
+      } else {
+        toast.error(result.error)
+      }
       return
     }
 
@@ -143,8 +148,8 @@ export function SiteForm({ categories, site, backHref, isSourcer = false, isAdmi
               <Label htmlFor="domain">Domain</Label>
               <Input
                 id="domain"
-                type="url"
-                placeholder="https://example.com"
+                type="text"
+                placeholder="example.com"
                 aria-invalid={!!errors.domain}
                 aria-describedby={errors.domain ? 'domain-error' : undefined}
                 {...register('domain')}

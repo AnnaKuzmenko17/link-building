@@ -86,8 +86,9 @@ Five roles exist in the system. Each role sees a different dashboard and has acc
 - Temporary holding area before order creation. Deleted when orders are created.
 
 **orders**
-- Fields: `id`, `client_id` → users, `site_id` → sites, `copywriter_id` → users (nullable), `sourcer_id` → users (derived from site at order time), `status` (enum — see below), `publish_month`, `content` (text, nullable), `published_url` (nullable), `created_at`, `updated_at`
+- Fields: `id`, `client_id` → users, `site_id` → sites, `copywriter_id` → users (nullable), `sourcer_id` → users (derived from site at order time), `chat_id` → chats (nullable), `status` (enum — see below), `publish_month`, `content` (text, nullable), `published_url` (nullable), `created_at`, `updated_at`
 - Order status enum: `new` | `in_progress` | `content_sent` | `needs_changes` | `content_approved` | `published` | `completed` | `canceled`
+- `chat_id` is set when a user clicks **Start Chat** on the order; reused on subsequent clicks.
 
 **change_requests**
 - Fields: `id`, `order_id` → orders, `comment` (text), `created_by` → users, `created_at`
@@ -101,13 +102,16 @@ Five roles exist in the system. Each role sees a different dashboard and has acc
 - Fields: `id`, `invoice_id` → invoices, `order_id` → orders, `amount`
 
 **chats**
-- Fields: `id`, `category` (enum: `support` | `sales` | `general`), `created_at`
+- Fields: `id`, `created_by` → users, `category` (enum: `support` | `sales` | `general`), `title` (text), `status` (enum: `active` | `archived`, default `active`), `created_at`
+- `general` is displayed in the UI as **Standard**.
+- `title` is required. Default value when auto-generated: comma-joined participant names. For order-linked chats: the order's site `domain`.
 
 **chat_participants**
 - Fields: `id`, `chat_id` → chats, `user_id` → users
 
 **messages**
-- Fields: `id`, `chat_id` → chats, `sender_id` → users, `body` (text), `status` (enum: `unread` | `read`), `created_at`
+- Fields: `id`, `chat_id` → chats, `sender_id` → users, `body` (text), `read_by` (uuid[], default `{}`), `created_at`
+- `read_by` stores the ids of users who have viewed the message. A message is "unread" for a given user if their id is not in `read_by` and they are not the sender.
 
 ### Key Relationships
 
@@ -115,6 +119,7 @@ Five roles exist in the system. Each role sees a different dashboard and has acc
 users (manager) ──< users (client, via manager_id)
 users ──< orders >── sites
 orders ──< change_requests
+orders ──> chats (optional, via chat_id)
 users ──< invoices ──< invoice_items >── orders
 chats >──< users (via chat_participants)
 chats ──< messages
@@ -708,44 +713,102 @@ Admin only. Single field: **Name** (required, unique). **Save** and **Cancel** b
 
 ### 5.10 Chat
 
-**Screens:** All Chats, Chat (thread view), Create Chat
+**Screens:** All Chats, Chat (thread view), Create Chat, Edit Chat, Change Chat Status
+
+> **Categories:** `support` | `sales` | `general`. The UI label for `general` is **Standard**.
+> **Status:** `active` | `archived` (default `active`). Archived chats are read-only.
 
 #### Permission Matrix
 
-All roles (`client`, `sourcer`, `copywriter`, `manager`, `admin`) can: view, filter, create chats, and send messages.
+All roles (`client`, `sourcer`, `copywriter`, `manager`, `admin`) have the same chat capabilities. Access is gated by participation, not by role.
+
+| Action | All roles |
+|---|---|
+| View own chats | ✅ |
+| Filter | ✅ |
+| Create (Standard only) | ✅ |
+| Send message (Active chats only) | ✅ |
+| Edit (Standard only) | ✅ (any participant) |
+| Archive / Unarchive (Standard only) | ✅ (any participant) |
+| Start Chat from Order | ✅ |
+
+> Edit, Archive, and Unarchive are **forbidden** on Support and Sales chats.
 
 #### 5.10.1 View Chats
 
-- **All Chats** screen shows chats the user participates in, sorted by most recent message.
+- **All Chats** screen shows chats the user participates in, sorted by most recent message activity.
+- Each row shows: title, category badge, status badge (when `archived`), last message preview, unread count.
 - Clicking a chat opens the **Chat** screen (thread view).
-- When a user reads a message, the system sets `message.status = read`.
+- When a user opens a thread, the system appends their `auth.uid()` to `read_by` for every message in the chat where it is not already present and where they are not the sender.
 
 #### 5.10.2 Filter Chats
 
-- Filter by: category, participant name, or keyword search.
+- Filter by: category, status (Active / Archived), participant name, keyword search across title and message bodies.
 
 #### 5.10.3 Create Chat (manual)
 
 1. User clicks **Create Chat** → **Create Chat** form.
-2. User selects participants and a category, clicks **Create**.
-3. System creates the chat and adds selected participants.
+2. Form fields:
+   - **Users**: required, multi-select; must include at least 2 users (the creator + at least one other). The creator is added automatically.
+   - **Title**: required. Default value: comma-joined participant names; the user can override.
+3. User clicks **Create**.
+4. System creates the chat with `category = general`, `status = active`, `created_by = auth.uid()`, and adds all selected participants.
+
+> Users cannot manually create `support` or `sales` chats — those categories are reserved for system auto-creation.
 
 #### 5.10.4 Auto-create Support Chat
 
-- Trigger: a new user sets their password for the first time (completes first login).
-- System automatically creates a chat between the new user and all users with role `admin`.
-- Chat `category` is set to `support`.
+- **Trigger:** a new user sets their password for the first time (completes first login).
+- System automatically creates a chat between the new user and all active users with role `admin`.
+- `category = support`, `status = active`. Title defaults to `"Support"`.
 
 #### 5.10.5 Auto-create Sales Chat
 
-- Trigger: a client creates their first order.
-- System automatically creates a chat between the client and all users with role `manager`.
-- Chat `category` is set to `sales`.
+- **Trigger:** a new user with role `client` sets their password for the first time (completes first login).
+- System automatically creates a chat between the client and the **single manager assigned to that client** (`users.manager_id`). No other managers are added.
+- `category = sales`, `status = active`. Title defaults to `"Sales"`.
+- If the client's `manager_id` is later reassigned, the old manager remains in the chat and the new manager is added (see §5.2.6 Assign Manager to Client).
 
-#### 5.10.6 Send Message
+#### 5.10.6 Edit Chat
 
+- Available only for chats with `category = general`. Forbidden for `support` and `sales`.
+- Available to any participant of the chat.
+1. User clicks **Edit** on the All Chats row or in the Chat header.
+2. System displays the **Edit Chat** form with current title and participants pre-filled.
+3. User updates fields and clicks **Save**. Validation: at least 2 users.
+4. System saves the changes.
+
+#### 5.10.7 Archive / Unarchive Chat
+
+- Available only for chats with `category = general`. Forbidden for `support` and `sales`.
+- Available to any participant.
+
+**Archive:**
+1. User clicks **Archive** on a chat with `status = active`.
+2. System displays the **Change Chat Status** confirmation screen with a read-only disclaimer.
+3. User clicks **Confirm**. System sets `status = archived`.
+
+**Unarchive:**
+1. User clicks **Unarchive** on a chat with `status = archived`.
+2. System displays the confirmation screen.
+3. User clicks **Confirm**. System sets `status = active`.
+
+#### 5.10.8 Start Chat from Order
+
+- Available on the **View Order** screen via a **Start Chat** button (visible to all roles with order access).
+1. User clicks **Start Chat**.
+2. **If `order.chat_id` is set:** system navigates the user to that chat.
+3. **If `order.chat_id` is null:** system creates a new chat with:
+   - `category = general`, `status = active`, `created_by = auth.uid()`
+   - `title` = the order's site `domain`
+   - Participants: the current user, the order's `copywriter_id` (if assigned), and the client's `manager_id` (if set). Duplicates are deduplicated. The client itself is *not* added unless they are the current user.
+4. System sets `order.chat_id` to the new chat id and navigates the user to the chat.
+
+#### 5.10.9 Send Message
+
+- Available only for chats with `status = active`. Archived chats display the thread read-only with no input.
 1. User types a message in the input field and clicks **Send**.
-2. System creates a `message` record with `status = unread`.
+2. System creates a `message` record with `read_by = []` (the sender is implicitly considered "read" — they are excluded from unread calculations for their own messages).
 3. Message appears in the thread immediately.
 
 ---
@@ -789,7 +852,8 @@ Apply consistent color-coding to `<Badge>` across all modules:
 | `draft` | `outline` (gray) |
 | `sent` | `default` (blue) |
 | `paid` | `default` (green) |
-| `archived` | `secondary` (gray) |
+| `archived` (site or chat) | `secondary` (gray) |
+| Chat `active` | `default` (green) |
 
 ### Layout
 
@@ -817,7 +881,7 @@ Apply consistent color-coding to `<Badge>` across all modules:
 7. **Invoices are created automatically by a system job, not manually.** Managers and admins can only edit, send, and mark them as paid.
 8. **Invoice billing period and actual publication date may differ.** Managers can adjust publication dates on invoice items before sending.
 9. **One invoice per client per billing period.** Multiple orders roll into one invoice.
-10. **Support chat is auto-created on first login.** Sales chat is auto-created on first order placement. Both are created by the system, not the user.
+10. **Support and Sales chats are auto-created on first login.** Both chats are created by the system the moment a user completes Set Password. Support chat includes the new user + all active admins. Sales chat (clients only) includes the client + their assigned manager only — never any other managers. Users cannot manually create chats with category `support` or `sales`; those are system-only. Archive/Edit are forbidden on Support and Sales chats.
 11. **Order status transitions are strictly sequential.** No skipping statuses (e.g., cannot go from `new` directly to `content_approved`).
 12. **RLS enforces data isolation.** Never rely solely on frontend guards — all access rules must be mirrored in Supabase RLS policies.
 13. **Every client must have a manager assigned.** `manager_id` is required and must be set at invite time. A client cannot exist without a manager.

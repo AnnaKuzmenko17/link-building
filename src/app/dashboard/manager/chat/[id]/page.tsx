@@ -11,6 +11,8 @@ interface Props {
   params: Promise<{ id: string }>
 }
 
+const categoryLabel: Record<string, string> = { support: 'Support', sales: 'Sales', general: 'Standard' }
+
 export default async function ManagerChatThreadPage({ params }: Props) {
   const { id } = await params
   const { user } = await requireSession()
@@ -23,20 +25,13 @@ export default async function ManagerChatThreadPage({ params }: Props) {
 
   if (!chat) notFound()
 
-  const otherParticipants = chat.participants
-    .filter((p) => p.id !== user.id)
-    .map((p) => `${p.first_name} ${p.last_name}`.trim() || 'Unknown')
-
-  const title = otherParticipants.length > 0
-    ? otherParticipants.slice(0, 2).join(', ') + (otherParticipants.length > 2 ? ` +${otherParticipants.length - 2}` : '')
-    : 'Chat'
-
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
         <BackButton fallbackHref="/dashboard/manager/chat" />
-        <PageHeader title={title} />
-        <Badge variant="outline" className="capitalize shrink-0">{chat.category}</Badge>
+        <PageHeader title={chat.title} />
+        <Badge variant="outline" className="shrink-0">{categoryLabel[chat.category] ?? chat.category}</Badge>
+        {chat.status === 'archived' && <Badge variant="secondary" className="shrink-0">Archived</Badge>}
       </div>
       <ChatThreadClient
         chat={chat}

@@ -8,6 +8,7 @@ import { BackButton } from '@/components/shared/back-button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatPublishMonth } from '@/lib/publish-months'
 import { ClientOrderActions } from './client-order-actions'
+import { StartChatButton } from './start-chat-button'
 
 interface Props {
   params: Promise<{ role: string; id: string }>
@@ -31,9 +32,12 @@ export default async function OrderDetailPage({ params }: Props) {
           <BackButton fallbackHref={`/dashboard/${role}/orders`} />
           <PageHeader title={`Order — ${order.site?.domain ?? '—'}`} />
         </div>
-        {role === 'client' && order.status === 'new' && (
-          <ClientOrderActions order={order} />
-        )}
+        <div className="flex gap-2">
+          {role === 'client' && order.status === 'new' && (
+            <ClientOrderActions order={order} />
+          )}
+          <StartChatButton orderId={order.id} role={role} />
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -51,7 +55,7 @@ export default async function OrderDetailPage({ params }: Props) {
             <CardTitle className="text-sm font-medium text-muted-foreground">Client</CardTitle>
           </CardHeader>
           <CardContent className="text-sm">
-            {order.client.first_name} {order.client.last_name}
+            {order.client ? `${order.client.first_name} ${order.client.last_name}` : '—'}
           </CardContent>
         </Card>
 

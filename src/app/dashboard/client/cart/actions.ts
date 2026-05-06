@@ -3,10 +3,8 @@
 import { z } from 'zod'
 import { requireSession } from '@/lib/auth/get-session'
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { removeFromCart, clearCart } from '@/lib/data/cart'
 import { createOrders } from '@/lib/data/orders'
-import { createSalesChatForClient } from '@/lib/data/chats'
 
 type Result = { success: true } | { success: false; error: string }
 
@@ -44,13 +42,6 @@ export async function createOrdersAction(
 
   const supabase = await createClient()
 
-  const { count: existingOrderCount } = await supabase
-    .from('orders')
-    .select('id', { count: 'exact', head: true })
-    .eq('client_id', user.id)
-
-  const isFirstOrder = existingOrderCount === 0
-
   const rows = parsed.data.map(({ siteId, publishMonth, comment }) => ({
     client_id: user.id,
     site_id: siteId,
@@ -64,15 +55,6 @@ export async function createOrdersAction(
 
   const { error: clearError } = await clearCart(supabase, user.id)
   if (clearError) console.error('[createOrdersAction] clearCart failed:', clearError.message)
-
-  if (isFirstOrder) {
-    try {
-      const adminClient = createAdminClient()
-      await createSalesChatForClient(adminClient, user.id)
-    } catch (e) {
-      console.error('[createOrdersAction] createSalesChatForClient failed:', e)
-    }
-  }
 
   return { success: true }
 }

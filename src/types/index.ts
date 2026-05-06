@@ -8,7 +8,7 @@ export type LinkType = Enums<'link_type'>
 export type OrderStatus = Enums<'order_status'>
 export type InvoiceStatus = Enums<'invoice_status'>
 export type ChatCategory = Enums<'chat_category'>
-export type MessageStatus = Enums<'message_status'>
+export type ChatStatus = Enums<'chat_status'>
 
 export const VALID_ROLES = ['client', 'manager', 'copywriter', 'sourcer', 'admin'] as const satisfies readonly Role[]
 

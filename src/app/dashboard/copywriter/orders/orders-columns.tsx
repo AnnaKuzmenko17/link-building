@@ -1,39 +1,9 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Button } from '@/components/ui/button'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { formatPublishMonth } from '@/lib/publish-months'
 import type { CopywriterOrder } from '@/lib/data/orders'
-
-function OrderActions({ order }: { order: CopywriterOrder }) {
-  const router = useRouter()
-  const showCreate = order.status === 'in_progress'
-  const showEdit = order.status === 'needs_changes'
-
-  if (!showCreate && !showEdit) return null
-
-  function navigate(e: React.MouseEvent) {
-    e.stopPropagation()
-    router.push(`/dashboard/copywriter/orders/${order.id}/content`)
-  }
-
-  return (
-    <div className="flex items-center gap-2">
-      {showCreate && (
-        <Button variant="outline" size="sm" onClick={navigate}>
-          Create Content
-        </Button>
-      )}
-      {showEdit && (
-        <Button variant="outline" size="sm" onClick={navigate}>
-          Edit Content
-        </Button>
-      )}
-    </div>
-  )
-}
 
 export function buildCopywriterOrderColumns(): ColumnDef<CopywriterOrder>[] {
   return [
@@ -45,19 +15,24 @@ export function buildCopywriterOrderColumns(): ColumnDef<CopywriterOrder>[] {
       ),
     },
     {
+      id: 'dr',
+      header: 'DR',
+      cell: ({ row }) => row.original.site?.dr ?? '—',
+    },
+    {
       id: 'status',
       header: 'Status',
       cell: ({ row }) => <StatusBadge status={row.original.status} />,
     },
     {
       id: 'publish_month',
-      header: 'Publish Month',
+      header: 'Publish Date',
       cell: ({ row }) => formatPublishMonth(row.original.publish_month),
     },
     {
-      id: 'actions',
-      header: '',
-      cell: ({ row }) => <OrderActions order={row.original} />,
+      id: 'comments',
+      header: 'Comments',
+      cell: ({ row }) => row.original.change_requests.length,
     },
   ]
 }
