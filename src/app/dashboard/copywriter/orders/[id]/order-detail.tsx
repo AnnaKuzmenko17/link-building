@@ -78,29 +78,38 @@ export function OrderDetail({ order }: Props) {
       </details>
 
       {/* Comments */}
-      {order.change_requests.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Comments</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            {order.change_requests
-              .slice()
-              .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-              .map((cr) => (
-                <div key={cr.id} className="rounded-md border bg-muted/20 p-3 text-sm">
-                  <p className="text-muted-foreground text-xs mb-1">
-                    {new Date(cr.created_at).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}
-                  </p>
-                  <p className="whitespace-pre-wrap">{cr.comment}</p>
+      {(order.comment || order.change_requests.length > 0) && (
+        <details className="group">
+          <summary className="flex cursor-pointer list-none items-center justify-between rounded-lg border bg-card px-4 py-3 text-sm font-medium select-none hover:bg-muted/50 transition-colors">
+            Comments
+            <ChevronDownIcon className="size-4 text-muted-foreground transition-transform group-open:rotate-180" />
+          </summary>
+          <Card className="mt-2 rounded-t-none border-t-0">
+            <CardContent className="pt-4 flex flex-col gap-3">
+              {order.comment && (
+                <div className="rounded-md border bg-muted/20 p-3 text-sm">
+                  <p className="text-muted-foreground text-xs mb-1">Client note</p>
+                  <p className="whitespace-pre-wrap">{order.comment}</p>
                 </div>
-              ))}
-          </CardContent>
-        </Card>
+              )}
+              {order.change_requests
+                .slice()
+                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                .map((cr) => (
+                  <div key={cr.id} className="rounded-md border bg-muted/20 p-3 text-sm">
+                    <p className="text-muted-foreground text-xs mb-1">
+                      {new Date(cr.created_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </p>
+                    <p className="whitespace-pre-wrap">{cr.comment}</p>
+                  </div>
+                ))}
+            </CardContent>
+          </Card>
+        </details>
       )}
     </div>
   )
