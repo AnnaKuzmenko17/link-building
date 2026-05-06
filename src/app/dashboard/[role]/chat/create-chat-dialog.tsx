@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useCallback, useEffect } from 'react'
+import { useState, useTransition, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { XIcon } from 'lucide-react'
@@ -42,51 +42,26 @@ function defaultTitle(selected: User[]): string {
   return selected.map(userName).join(', ')
 }
 
+function initialSelected(editChat: ChatDetail | undefined, currentUserId: string): User[] {
+  if (!editChat) return []
+  return editChat.participants
+    .filter((p) => p.id !== currentUserId)
+    .map((p) => ({ id: p.id, first_name: p.first_name, last_name: p.last_name, email: '', role: '' }))
+}
+
 export function CreateChatDialog({ open, onOpenChange, role, currentUserId, editChat }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  const [title, setTitle] = useState('')
-  const [titleTouched, setTitleTouched] = useState(false)
+  const [title, setTitle] = useState(() => editChat?.title ?? '')
+  const [titleTouched, setTitleTouched] = useState(!!editChat)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<User[]>([])
-  const [selected, setSelected] = useState<User[]>([])
+  const [selected, setSelected] = useState<User[]>(() => initialSelected(editChat, currentUserId))
   const [searching, setSearching] = useState(false)
 
   const isEdit = !!editChat
 
-  // Populate for edit mode
-  useEffect(() => {
-    if (!open) return
-    if (editChat) {
-      setTitle(editChat.title)
-      setTitleTouched(true)
-      // Populate selected from participants excluding current user
-      setSelected(
-        editChat.participants
-          .filter((p) => p.id !== currentUserId)
-          .map((p) => ({
-            id: p.id,
-            first_name: p.first_name,
-            last_name: p.last_name,
-            email: '',
-            role: '',
-          }))
-      )
-    } else {
-      setTitle('')
-      setTitleTouched(false)
-      setSelected([])
-    }
-    setSearchQuery('')
-    setSearchResults([])
-  }, [open, editChat, currentUserId])
-
-  // Auto-generate title from participants when not manually set
-  useEffect(() => {
-    if (!titleTouched && !isEdit) {
-      setTitle(defaultTitle(selected))
-    }
-  }, [selected, titleTouched, isEdit])
+  const displayTitle = titleTouched || isEdit ? title : defaultTitle(selected)
 
   const handleSearch = useCallback(async (query: string) => {
     setSearchQuery(query)
@@ -114,10 +89,15 @@ export function CreateChatDialog({ open, onOpenChange, role, currentUserId, edit
 
   function handleClose() {
     onOpenChange(false)
+    setTitle(editChat?.title ?? '')
+    setTitleTouched(!!editChat)
+    setSelected(initialSelected(editChat, currentUserId))
+    setSearchQuery('')
+    setSearchResults([])
   }
 
   function handleSubmit() {
-    if (!title.trim()) {
+    if (!displayTitle.trim()) {
       toast.error('Title is required.')
       return
     }
@@ -129,7 +109,7 @@ export function CreateChatDialog({ open, onOpenChange, role, currentUserId, edit
       if (isEdit) {
         const result = await editChatAction(
           editChat!.id,
-          title,
+          displayTitle,
           selected.map((u) => u.id)
         )
         if (!result.success) {
@@ -140,7 +120,7 @@ export function CreateChatDialog({ open, onOpenChange, role, currentUserId, edit
         handleClose()
         router.refresh()
       } else {
-        const result = await createChatAction(selected.map((u) => u.id), title)
+        const result = await createChatAction(selected.map((u) => u.id), displayTitle)
         if (!result.success) {
           toast.error(result.error)
           return
@@ -165,7 +145,7 @@ export function CreateChatDialog({ open, onOpenChange, role, currentUserId, edit
             <Input
               id="chat-title"
               placeholder="Chat title…"
-              value={title}
+              value={displayTitle}
               onChange={(e) => {
                 setTitle(e.target.value)
                 setTitleTouched(true)
@@ -240,7 +220,7 @@ export function CreateChatDialog({ open, onOpenChange, role, currentUserId, edit
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={isPending || !title.trim() || selected.length === 0}
+            disabled={isPending || !displayTitle.trim() || selected.length === 0}
           >
             {isPending ? (isEdit ? 'Saving…' : 'Creating…') : (isEdit ? 'Save' : 'Create Chat')}
           </Button>

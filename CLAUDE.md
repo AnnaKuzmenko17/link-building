@@ -13,6 +13,10 @@ npx tsc --noEmit  # typecheck without building
 
 No test suite is configured yet.
 
+## Development workflow
+
+Always finish every feature or fix by running `npm run lint` and resolving all errors before considering the work done. Warnings from `react-hooks/incompatible-library` (react-hook-form `watch`, TanStack `useReactTable`) are acceptable — they are caused by third-party APIs incompatible with the React Compiler and cannot be fixed without changing libraries. All other ESLint errors must be fixed.
+
 ## Architecture
 
 This is a linkbuilding management platform with five roles: `client`, `manager`, `copywriter`, `sourcer`, `admin`. Each role has its own dashboard route and sees different modules. See `PRD.md` for full feature spec and `PLAN.md` for the phased implementation plan.
