@@ -17,6 +17,14 @@ A web-based internal platform that unifies all linkbuilding operations — from 
 - **shadcn/ui** + Tailwind CSS v4
 - **react-hook-form** + Zod
 
+## Environments
+
+| Environment | URL |
+|---|---|
+| Local | http://localhost:3000 |
+| Staging | https://staging-link-building-five.vercel.app/ |
+| Production | https://link-building-five.vercel.app/ |
+
 ## Getting Started
 
 1. Install dependencies:
