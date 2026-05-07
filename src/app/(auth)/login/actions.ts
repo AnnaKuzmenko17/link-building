@@ -8,7 +8,7 @@ import { ensureDefaultChatsForClient } from '@/lib/data/chats'
 import type { Role } from '@/types'
 
 const schema = z.object({
-  email: z.string().email(),
+  email: z.email(),
   password: z.string().min(1),
 })
 
@@ -29,7 +29,7 @@ export async function loginAction(email: string, password: string): Promise<Logi
     return { success: false, error: 'Invalid email or password.' }
   }
 
-  const role = resolveRole(data.user.user_metadata.role)
+  const role = resolveRole(data.user.user_metadata?.role)
   if (!role) {
     return { success: false, error: 'Account configuration error. Please contact support.' }
   }

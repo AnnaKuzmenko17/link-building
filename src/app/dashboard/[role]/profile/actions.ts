@@ -13,7 +13,7 @@ type Result = { success: true } | { success: false; error: string }
 const updateProfileSchema = z.object({
   first_name: z.string().min(1, 'First name is required'),
   last_name: z.string().min(1, 'Last name is required'),
-  email: z.string().email('Enter a valid email address'),
+  email: z.email('Enter a valid email address'),
 })
 
 export async function updateProfileAction(input: {

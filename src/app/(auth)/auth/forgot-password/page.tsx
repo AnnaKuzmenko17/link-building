@@ -14,7 +14,7 @@ import { Logo } from '@/components/shared/logo'
 import { forgotPasswordAction } from './actions'
 
 const schema = z.object({
-  email: z.string().email('Enter a valid email'),
+  email: z.email('Enter a valid email'),
 })
 
 type FormValues = z.infer<typeof schema>

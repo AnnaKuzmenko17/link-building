@@ -42,7 +42,7 @@ function buildSchema(viewerRole: Role) {
     .object({
       first_name: z.string().min(1, 'First name is required'),
       last_name: z.string().min(1, 'Last name is required'),
-      email: z.string().email('Enter a valid email address'),
+      email: z.email('Enter a valid email address'),
       role: z.enum(['client', 'manager', 'copywriter', 'sourcer', 'admin']),
       manager_id: z.string().uuid('Select a manager').optional(),
     })

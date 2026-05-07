@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { getAppUrl } from '@/lib/get-app-url'
 
-const schema = z.object({ email: z.string().email() })
+const schema = z.object({ email: z.email() })
 
 export async function forgotPasswordAction(email: string): Promise<{ success: true } | { success: false; error: string }> {
   const parsed = schema.safeParse({ email })

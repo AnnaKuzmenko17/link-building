@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "link:prod": "supabase link --project-ref bjjxqlwzputcmagxhiwk",
+    "link:staging": "supabase link --project-ref rtmouvwnvfgrqhdnulrc",
+    "push:prod": "npm run link:prod && supabase db push",
+    "push:staging": "npm run link:staging && supabase db push"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
