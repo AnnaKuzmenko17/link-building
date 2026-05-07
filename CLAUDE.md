@@ -68,5 +68,7 @@ SUPABASE_SECRET_KEY             # server-only, admin operations (replaces legacy
 BREVO_API_KEY                   # server-only, used to send resend-invite emails via Brevo REST API
 BREVO_SENDER_EMAIL              # verified sender email address in Brevo
 BREVO_SENDER_NAME               # sender display name (optional, defaults to "Linkbuilding")
+BREVO_SMTP_USER                 # Brevo SMTP login — used by Supabase local auth (config.toml)
+BREVO_SMTP_PASS                 # Brevo SMTP password / API key for SMTP relay
 VERCEL_URL                      # set automatically on Vercel; used to build email redirect URLs. Falls back to http://localhost:3000.
 ```
