@@ -113,7 +113,7 @@ export async function resendInviteAction(targetId: string): Promise<Result> {
   if (!brevoApiKey || !brevoSenderEmail) return { success: false, error: 'Email service not configured.' }
 
   const actionLink = data.properties.action_link
-  if (!actionLink.startsWith('https://')) {
+  if (!actionLink.startsWith('http')) {
     return { success: false, error: 'Generated link is invalid.' }
   }
 
