@@ -411,7 +411,6 @@ export type Database = {
           organic_traffic_count: number
           price: number
           requirements: string | null
-          sourcer_id: string | null
           sourcer_notes: string | null
           status: Database["public"]["Enums"]["site_status"]
           top_countries: string
@@ -438,7 +437,6 @@ export type Database = {
           organic_traffic_count?: number
           price?: number
           requirements?: string | null
-          sourcer_id?: string | null
           sourcer_notes?: string | null
           status?: Database["public"]["Enums"]["site_status"]
           top_countries?: string
@@ -465,7 +463,6 @@ export type Database = {
           organic_traffic_count?: number
           price?: number
           requirements?: string | null
-          sourcer_id?: string | null
           sourcer_notes?: string | null
           status?: Database["public"]["Enums"]["site_status"]
           top_countries?: string
@@ -496,13 +493,6 @@ export type Database = {
           {
             foreignKeyName: "sites_needs_changes_by_fkey"
             columns: ["needs_changes_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sites_sourcer_id_fkey"
-            columns: ["sourcer_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]

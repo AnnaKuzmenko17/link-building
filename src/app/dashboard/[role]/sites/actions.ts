@@ -20,7 +20,6 @@ export async function createSiteAction(input: SiteFormValues): Promise<Result> {
   const { error } = await createSite(supabase, {
     ...parsed.data,
     created_by: user.id,
-    sourcer_id: user.id,
   })
 
   if (error) {

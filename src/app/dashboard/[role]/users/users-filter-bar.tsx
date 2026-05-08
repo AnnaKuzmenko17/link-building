@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { Input } from '@/components/ui/input'
 import {
@@ -12,15 +12,7 @@ import {
 } from '@/components/ui/select'
 import { SearchIcon } from 'lucide-react'
 
-interface Props {
-  defaultValues: {
-    role?: string
-    status?: string
-    search?: string
-  }
-}
-
-export function UsersFilterBar({ defaultValues }: Props) {
+export function UsersFilterBar() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -28,6 +20,7 @@ export function UsersFilterBar({ defaultValues }: Props) {
 
   const roleValue = searchParams.get('role') ?? 'all'
   const statusValue = searchParams.get('status') ?? 'all'
+  const [searchValue, setSearchValue] = useState(searchParams.get('search') ?? '')
 
   const roleItems = [
     { value: 'all', label: 'All Roles' },
@@ -58,6 +51,7 @@ export function UsersFilterBar({ defaultValues }: Props) {
 
   function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
     const value = e.target.value
+    setSearchValue(value)
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
       pushParams({ search: value || undefined })
@@ -80,8 +74,8 @@ export function UsersFilterBar({ defaultValues }: Props) {
         <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
         <Input
           className="pl-8 w-64"
-          placeholder="Search by email…"
-          defaultValue={defaultValues.search}
+          placeholder="Search by name or email…"
+          value={searchValue}
           onChange={handleSearchChange}
         />
       </div>

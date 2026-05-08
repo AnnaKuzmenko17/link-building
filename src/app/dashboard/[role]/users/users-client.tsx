@@ -62,7 +62,7 @@ export function UsersClient({ users, basePath, defaultFilters }: Props) {
 
       {filtersOpen && (
         <div id="users-filters" className="rounded-lg border p-4">
-          <UsersFilterBar defaultValues={defaultFilters} />
+          <UsersFilterBar />
         </div>
       )}
 

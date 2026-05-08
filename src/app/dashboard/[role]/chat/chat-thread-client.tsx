@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { createClient } from '@/lib/supabase/client'
 import { sendMessageAction, markMessagesReadAction } from './actions'
 import type { ChatDetail, MessageWithSender } from '@/lib/data/chats'
+import { getInitials } from '@/lib/utils'
 
 interface Props {
   chat: ChatDetail
@@ -31,10 +32,6 @@ function formatDateLabel(dateStr: string): string {
   if (d.toDateString() === today.toDateString()) return 'Today'
   if (d.toDateString() === yesterday.toDateString()) return 'Yesterday'
   return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-}
-
-function getInitials(user: { first_name: string; last_name: string }): string {
-  return `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}`.toUpperCase() || '?'
 }
 
 export function ChatThreadClient({ chat, initialMessages, currentUserId }: Props) {
@@ -192,7 +189,7 @@ export function ChatThreadClient({ chat, initialMessages, currentUserId }: Props
                       className="h-7 w-7 rounded-full object-cover"
                     />
                   ) : (
-                    getInitials(msg.sender)
+                    getInitials(msg.sender.first_name, msg.sender.last_name)
                   )}
                 </div>
                 <div className={`flex flex-col gap-0.5 max-w-[70%] ${isOwn ? 'items-end' : 'items-start'}`}>
