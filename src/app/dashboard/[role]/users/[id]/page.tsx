@@ -5,6 +5,7 @@ import { getUserById, getActiveManagers } from '@/lib/data/users'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { Card, CardContent } from '@/components/ui/card'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { UserActions } from './user-actions'
 import type { Role } from '@/types'
 
@@ -60,6 +61,18 @@ export default async function UserDetailsPage({ params }: Props) {
 
       <Card>
         <CardContent>
+          <div className="flex justify-center mb-4">
+            <Avatar size="lg">
+              <AvatarImage src={targetUser.avatar_url ?? undefined} />
+              <AvatarFallback>
+                {[targetUser.first_name, targetUser.last_name]
+                  .filter(Boolean)
+                  .map((p) => p![0])
+                  .join('')
+                  .toUpperCase() || targetUser.email[0].toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+          </div>
           <dl className="grid grid-cols-[auto_1fr] gap-x-8 gap-y-3 text-sm">
             <dt className="text-muted-foreground">First Name</dt>
             <dd>{targetUser.first_name || '—'}</dd>

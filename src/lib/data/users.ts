@@ -70,7 +70,10 @@ export async function getUserList(
 
   if (filters.role && isValidRole(filters.role)) query = query.eq('role', filters.role)
   if (filters.status && isValidStatus(filters.status)) query = query.eq('status', filters.status)
-  if (filters.search) query = query.ilike('email', `%${filters.search.slice(0, 255)}%`)
+  if (filters.search) {
+    const term = `%${filters.search.slice(0, 255)}%`
+    query = query.or(`email.ilike.${term},first_name.ilike.${term},last_name.ilike.${term}`)
+  }
 
   const { data, error } = await query
   if (error) throw new Error(`Failed to load users: ${error.message}`)

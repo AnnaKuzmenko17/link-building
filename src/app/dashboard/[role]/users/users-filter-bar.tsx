@@ -13,14 +13,11 @@ import {
 import { SearchIcon } from 'lucide-react'
 
 interface Props {
-  defaultValues: {
-    role?: string
-    status?: string
-    search?: string
-  }
+  searchValue: string
+  onSearchChange: (value: string) => void
 }
 
-export function UsersFilterBar({ defaultValues }: Props) {
+export function UsersFilterBar({ searchValue, onSearchChange }: Props) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -47,9 +44,9 @@ export function UsersFilterBar({ defaultValues }: Props) {
 
   function pushParams(updates: Record<string, string | undefined>) {
     const params = new URLSearchParams()
-    const role = updates.role ?? (searchParams.get('role') || undefined)
-    const status = updates.status ?? (searchParams.get('status') || undefined)
-    const search = updates.search ?? (searchParams.get('search') || undefined)
+    const role = 'role' in updates ? updates.role : (searchParams.get('role') || undefined)
+    const status = 'status' in updates ? updates.status : (searchParams.get('status') || undefined)
+    const search = 'search' in updates ? updates.search : (searchParams.get('search') || undefined)
     if (role) params.set('role', role)
     if (status) params.set('status', status)
     if (search) params.set('search', search)
@@ -58,6 +55,7 @@ export function UsersFilterBar({ defaultValues }: Props) {
 
   function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
     const value = e.target.value
+    onSearchChange(value)
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
       pushParams({ search: value || undefined })
@@ -80,8 +78,8 @@ export function UsersFilterBar({ defaultValues }: Props) {
         <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
         <Input
           className="pl-8 w-64"
-          placeholder="Search by email…"
-          defaultValue={defaultValues.search}
+          placeholder="Search by name or email…"
+          value={searchValue}
           onChange={handleSearchChange}
         />
       </div>

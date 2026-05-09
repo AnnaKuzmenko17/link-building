@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { createClient } from '@/lib/supabase/client'
 import { sendMessageAction, markMessagesReadAction } from './actions'
-import type { ChatDetail, MessageWithSender } from '@/lib/data/chats'
+import type { ChatDetail, ChatParticipantUser, MessageWithSender } from '@/lib/data/chats'
+import { getInitials } from '@/lib/utils'
 
 interface Props {
   chat: ChatDetail
@@ -31,10 +32,6 @@ function formatDateLabel(dateStr: string): string {
   if (d.toDateString() === today.toDateString()) return 'Today'
   if (d.toDateString() === yesterday.toDateString()) return 'Yesterday'
   return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-}
-
-function getInitials(user: { first_name: string; last_name: string }): string {
-  return `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}`.toUpperCase() || '?'
 }
 
 export function ChatThreadClient({ chat, initialMessages, currentUserId }: Props) {
@@ -105,6 +102,21 @@ export function ChatThreadClient({ chat, initialMessages, currentUserId }: Props
           markMessagesReadAction(chat.id)
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `chat_id=eq.${chat.id}`,
+        },
+        (payload) => {
+          const updated = payload.new as { id: string; read_by: string[] }
+          setMessages((prev) =>
+            prev.map((m) => (m.id === updated.id ? { ...m, read_by: updated.read_by } : m))
+          )
+        }
+      )
       .subscribe()
 
     return () => {
@@ -153,6 +165,10 @@ export function ChatThreadClient({ chat, initialMessages, currentUserId }: Props
     }
   }
 
+  const lastMessage = messages[messages.length - 1]
+  const lastOwnMessageId =
+    lastMessage?.sender_id === currentUserId ? lastMessage.id : undefined
+
   const messagesWithLabels = messages.map((msg, i) => {
     const dateLabel = formatDateLabel(msg.created_at)
     const prevLabel = i > 0 ? formatDateLabel(messages[i - 1].created_at) : ''
@@ -192,7 +208,7 @@ export function ChatThreadClient({ chat, initialMessages, currentUserId }: Props
                       className="h-7 w-7 rounded-full object-cover"
                     />
                   ) : (
-                    getInitials(msg.sender)
+                    getInitials(msg.sender.first_name, msg.sender.last_name)
                   )}
                 </div>
                 <div className={`flex flex-col gap-0.5 max-w-[70%] ${isOwn ? 'items-end' : 'items-start'}`}>
@@ -213,6 +229,38 @@ export function ChatThreadClient({ chat, initialMessages, currentUserId }: Props
                   <span className="text-[10px] text-muted-foreground px-1">
                     {formatTime(msg.created_at)}
                   </span>
+                  {isOwn && msg.id === lastOwnMessageId && (() => {
+                    const readers = msg.read_by
+                      .filter((id) => id !== msg.sender_id)
+                      .map((id) => chat.participants.find((p) => p.id === id))
+                      .filter(Boolean) as ChatParticipantUser[]
+                    if (readers.length === 0) return null
+                    return (
+                      <div className="flex items-center gap-0.5 px-1 flex-row-reverse">
+                        {readers.slice(0, 5).map((reader) => (
+                          <div
+                            key={reader.id}
+                            className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-[8px] font-medium ring-1 ring-background"
+                            title={`${reader.first_name} ${reader.last_name}`.trim() || 'Unknown'}
+                          >
+                            {reader.avatar_url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={reader.avatar_url}
+                                alt=""
+                                className="h-4 w-4 rounded-full object-cover"
+                              />
+                            ) : (
+                              getInitials(reader.first_name, reader.last_name)
+                            )}
+                          </div>
+                        ))}
+                        {readers.length > 5 && (
+                          <span className="text-[8px] text-muted-foreground">+{readers.length - 5}</span>
+                        )}
+                      </div>
+                    )
+                  })()}
                 </div>
               </div>
             </div>
