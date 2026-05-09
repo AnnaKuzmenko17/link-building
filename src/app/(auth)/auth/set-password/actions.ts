@@ -36,8 +36,8 @@ export async function activateSessionAction(mode: 'first-login' | 'change'): Pro
     const role = resolveRole(profile?.role)
     if (!role) return { success: false, error: 'Account configuration error. Please contact support.' }
 
-    await createSupportChatForUser(adminClient, user.id)
     if (profile?.role === 'client') {
+      await createSupportChatForUser(adminClient, user.id)
       await createSalesChatForClient(adminClient, user.id)
     }
 
