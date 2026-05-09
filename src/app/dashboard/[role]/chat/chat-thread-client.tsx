@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { createClient } from '@/lib/supabase/client'
 import { sendMessageAction, markMessagesReadAction } from './actions'
-import type { ChatDetail, MessageWithSender } from '@/lib/data/chats'
+import type { ChatDetail, ChatParticipantUser, MessageWithSender } from '@/lib/data/chats'
 import { getInitials } from '@/lib/utils'
 
 interface Props {
@@ -102,6 +102,21 @@ export function ChatThreadClient({ chat, initialMessages, currentUserId }: Props
           markMessagesReadAction(chat.id)
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `chat_id=eq.${chat.id}`,
+        },
+        (payload) => {
+          const updated = payload.new as { id: string; read_by: string[] }
+          setMessages((prev) =>
+            prev.map((m) => (m.id === updated.id ? { ...m, read_by: updated.read_by } : m))
+          )
+        }
+      )
       .subscribe()
 
     return () => {
@@ -149,6 +164,10 @@ export function ChatThreadClient({ chat, initialMessages, currentUserId }: Props
       handleSend()
     }
   }
+
+  const lastMessage = messages[messages.length - 1]
+  const lastOwnMessageId =
+    lastMessage?.sender_id === currentUserId ? lastMessage.id : undefined
 
   const messagesWithLabels = messages.map((msg, i) => {
     const dateLabel = formatDateLabel(msg.created_at)
@@ -210,6 +229,38 @@ export function ChatThreadClient({ chat, initialMessages, currentUserId }: Props
                   <span className="text-[10px] text-muted-foreground px-1">
                     {formatTime(msg.created_at)}
                   </span>
+                  {isOwn && msg.id === lastOwnMessageId && (() => {
+                    const readers = msg.read_by
+                      .filter((id) => id !== msg.sender_id)
+                      .map((id) => chat.participants.find((p) => p.id === id))
+                      .filter(Boolean) as ChatParticipantUser[]
+                    if (readers.length === 0) return null
+                    return (
+                      <div className="flex items-center gap-0.5 px-1 flex-row-reverse">
+                        {readers.slice(0, 5).map((reader) => (
+                          <div
+                            key={reader.id}
+                            className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-[8px] font-medium ring-1 ring-background"
+                            title={`${reader.first_name} ${reader.last_name}`.trim() || 'Unknown'}
+                          >
+                            {reader.avatar_url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={reader.avatar_url}
+                                alt=""
+                                className="h-4 w-4 rounded-full object-cover"
+                              />
+                            ) : (
+                              getInitials(reader.first_name, reader.last_name)
+                            )}
+                          </div>
+                        ))}
+                        {readers.length > 5 && (
+                          <span className="text-[8px] text-muted-foreground">+{readers.length - 5}</span>
+                        )}
+                      </div>
+                    )
+                  })()}
                 </div>
               </div>
             </div>

@@ -75,13 +75,14 @@ const navItems: Record<Role, NavItem[]> = {
 interface Props {
   role: Role
   user: User
+  unreadChatCount?: number
 }
 
 function getInitial(value: string | null | undefined): string {
   return value && value.length > 0 ? value.charAt(0).toUpperCase() : '?'
 }
 
-export function AppSidebar({ role, user }: Props) {
+export function AppSidebar({ role, user, unreadChatCount }: Props) {
   const pathname = usePathname()
   const items = navItems[role]
   const meta = user.user_metadata ?? {}
@@ -101,17 +102,26 @@ export function AppSidebar({ role, user }: Props) {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    isActive={pathname.startsWith(item.href)}
-                    render={<Link href={item.href} />}
-                  >
-                    <item.icon />
-                    <span>{item.label}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {items.map((item) => {
+                const isChat = item.icon === MessageCircleIcon
+                const showBadge = isChat && unreadChatCount && unreadChatCount > 0
+                return (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      isActive={pathname.startsWith(item.href)}
+                      render={<Link href={item.href} />}
+                    >
+                      <item.icon />
+                      <span>{item.label}</span>
+                      {showBadge && (
+                        <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground">
+                          {unreadChatCount > 99 ? '99+' : unreadChatCount}
+                        </span>
+                      )}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

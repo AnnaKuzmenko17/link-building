@@ -14,11 +14,12 @@ interface Props {
   defaultFilters: { role?: string; status?: string; search?: string }
 }
 
-function ClearFiltersButton() {
+function ClearFiltersButton({ onClear }: { onClear: () => void }) {
   const router = useRouter()
   const pathname = usePathname()
 
   function handleClearFilters() {
+    onClear()
     router.replace(pathname, { scroll: false })
   }
 
@@ -31,6 +32,7 @@ function ClearFiltersButton() {
 
 export function UsersClient({ users, basePath, defaultFilters }: Props) {
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [searchValue, setSearchValue] = useState(defaultFilters.search ?? '')
 
   const hasActiveFilters = !!(defaultFilters.role || defaultFilters.status || defaultFilters.search)
   const activeCount = [defaultFilters.role, defaultFilters.status, defaultFilters.search].filter(Boolean).length
@@ -57,12 +59,12 @@ export function UsersClient({ users, basePath, defaultFilters }: Props) {
             </span>
           )}
         </Button>
-        {hasActiveFilters && <ClearFiltersButton />}
+        {hasActiveFilters && <ClearFiltersButton onClear={() => setSearchValue('')} />}
       </div>
 
       {filtersOpen && (
         <div id="users-filters" className="rounded-lg border p-4">
-          <UsersFilterBar />
+          <UsersFilterBar searchValue={searchValue} onSearchChange={setSearchValue} />
         </div>
       )}
 

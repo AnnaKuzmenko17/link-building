@@ -1,25 +1,14 @@
 'use client'
 
-import { useState, useMemo, useTransition } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { MessageCircleIcon, PlusIcon, PencilIcon, ArchiveIcon, ArchiveRestoreIcon } from 'lucide-react'
-import { toast } from 'sonner'
+import { MessageCircleIcon, PlusIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 import { CreateChatDialog } from './create-chat-dialog'
-import { archiveChatAction, unarchiveChatAction } from './actions'
-import type { ChatWithPreview, ChatDetail } from '@/lib/data/chats'
+import { getInitials } from '@/lib/utils'
+import type { ChatWithPreview } from '@/lib/data/chats'
 import type { ChatCategory, ChatStatus } from '@/types'
 
 interface Props {
@@ -51,14 +40,10 @@ function formatRelativeTime(dateStr: string): string {
 
 export function ChatListClient({ chats, userId, role, canCreate, showCategoryFilter = false }: Props) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<ChatCategory | 'all'>('all')
   const [statusFilter, setStatusFilter] = useState<ChatStatus | 'all'>('all')
   const [createOpen, setCreateOpen] = useState(false)
-  const [editChat, setEditChat] = useState<ChatDetail | null>(null)
-  const [confirmArchive, setConfirmArchive] = useState<ChatWithPreview | null>(null)
-  const [confirmUnarchive, setConfirmUnarchive] = useState<ChatWithPreview | null>(null)
 
   const filtered = useMemo(() => {
     return chats.filter((chat) => {
@@ -78,40 +63,6 @@ export function ChatListClient({ chats, userId, role, canCreate, showCategoryFil
   }, [chats, categoryFilter, statusFilter, search])
 
   const categories: (ChatCategory | 'all')[] = ['all', 'support', 'sales', 'general']
-
-  function handleArchiveConfirm() {
-    if (!confirmArchive) return
-    const chatId = confirmArchive.id
-    setConfirmArchive(null)
-    startTransition(async () => {
-      const result = await archiveChatAction(chatId)
-      if (!result.success) toast.error(result.error)
-      else { toast.success('Chat archived.'); router.refresh() }
-    })
-  }
-
-  function handleUnarchiveConfirm() {
-    if (!confirmUnarchive) return
-    const chatId = confirmUnarchive.id
-    setConfirmUnarchive(null)
-    startTransition(async () => {
-      const result = await unarchiveChatAction(chatId)
-      if (!result.success) toast.error(result.error)
-      else { toast.success('Chat unarchived.'); router.refresh() }
-    })
-  }
-
-  // Build a ChatDetail stub for edit mode from the preview data
-  function buildEditDetail(chat: ChatWithPreview): ChatDetail {
-    return {
-      id: chat.id,
-      category: chat.category,
-      status: chat.status,
-      title: chat.title,
-      created_at: chat.created_at,
-      participants: chat.participants,
-    }
-  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -169,17 +120,15 @@ export function ChatListClient({ chats, userId, role, canCreate, showCategoryFil
         <div className="flex flex-col divide-y rounded-lg border">
           {filtered.map((chat) => {
             const timeStr = chat.last_message?.created_at ?? chat.created_at
-            const isStandard = chat.category === 'general'
+            const otherParticipants = chat.participants.filter((p) => p.id !== userId)
 
             return (
-              <div
+              <button
                 key={chat.id}
-                className="flex items-start gap-3 px-4 py-3 first:rounded-t-lg last:rounded-b-lg hover:bg-muted/30 transition-colors"
+                className="flex items-start gap-3 px-4 py-3 first:rounded-t-lg last:rounded-b-lg hover:bg-muted/30 transition-colors text-left"
+                onClick={() => router.push(`/dashboard/${role}/chat/${chat.id}`)}
               >
-                <button
-                  className="flex-1 min-w-0 text-left"
-                  onClick={() => router.push(`/dashboard/${role}/chat/${chat.id}`)}
-                >
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
                     <Badge variant="outline" className="text-xs shrink-0">
                       {categoryLabels[chat.category]}
@@ -189,10 +138,30 @@ export function ChatListClient({ chats, userId, role, canCreate, showCategoryFil
                     )}
                     <span className="text-sm font-medium truncate">{chat.title}</span>
                   </div>
+                  {otherParticipants.length > 0 && (
+                    <div className="flex items-center gap-1.5 mt-0.5 overflow-hidden">
+                      {otherParticipants.slice(0, 3).map((p) => (
+                        <div key={p.id} className="flex items-center gap-1 shrink-0">
+                          <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-[9px] font-medium overflow-hidden">
+                            {p.avatar_url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={p.avatar_url} alt="" className="h-4 w-4 rounded-full object-cover" />
+                            ) : (
+                              getInitials(p.first_name, p.last_name)
+                            )}
+                          </div>
+                          <span className="text-xs text-muted-foreground truncate">{p.first_name} {p.last_name}</span>
+                        </div>
+                      ))}
+                      {otherParticipants.length > 3 && (
+                        <span className="text-xs text-muted-foreground shrink-0">+{otherParticipants.length - 3} more</span>
+                      )}
+                    </div>
+                  )}
                   <p className="text-sm text-muted-foreground truncate">
                     {chat.last_message ? chat.last_message.body : 'No messages yet'}
                   </p>
-                </button>
+                </div>
 
                 <div className="flex flex-col items-end gap-1.5 shrink-0">
                   <span className="text-xs text-muted-foreground">{formatRelativeTime(timeStr)}</span>
@@ -201,45 +170,8 @@ export function ChatListClient({ chats, userId, role, canCreate, showCategoryFil
                       {chat.unread_count > 99 ? '99+' : chat.unread_count}
                     </span>
                   )}
-                  {isStandard && (
-                    <div className="flex gap-1 mt-0.5">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-7"
-                        title="Edit chat"
-                        disabled={isPending}
-                        onClick={(e) => { e.stopPropagation(); setEditChat(buildEditDetail(chat)) }}
-                      >
-                        <PencilIcon className="size-3.5" />
-                      </Button>
-                      {chat.status === 'active' ? (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-7"
-                          title="Archive chat"
-                          disabled={isPending}
-                          onClick={(e) => { e.stopPropagation(); setConfirmArchive(chat) }}
-                        >
-                          <ArchiveIcon className="size-3.5" />
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-7"
-                          title="Unarchive chat"
-                          disabled={isPending}
-                          onClick={(e) => { e.stopPropagation(); setConfirmUnarchive(chat) }}
-                        >
-                          <ArchiveRestoreIcon className="size-3.5" />
-                        </Button>
-                      )}
-                    </div>
-                  )}
                 </div>
-              </div>
+              </button>
             )
           })}
         </div>
@@ -247,45 +179,12 @@ export function ChatListClient({ chats, userId, role, canCreate, showCategoryFil
 
       {canCreate && (
         <CreateChatDialog
-          open={createOpen || !!editChat}
-          onOpenChange={(open) => {
-            if (!open) { setCreateOpen(false); setEditChat(null) }
-          }}
+          open={createOpen}
+          onOpenChange={setCreateOpen}
           role={role}
           currentUserId={userId}
-          editChat={editChat ?? undefined}
         />
       )}
-
-      <AlertDialog open={!!confirmArchive} onOpenChange={(o) => !o && setConfirmArchive(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Archive chat?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Archiving will prevent new messages until the chat is unarchived.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleArchiveConfirm}>Archive</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={!!confirmUnarchive} onOpenChange={(o) => !o && setConfirmUnarchive(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Unarchive chat?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will allow participants to send messages again.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleUnarchiveConfirm}>Unarchive</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }

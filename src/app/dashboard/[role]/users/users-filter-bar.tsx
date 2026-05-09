@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { Input } from '@/components/ui/input'
 import {
@@ -12,7 +12,12 @@ import {
 } from '@/components/ui/select'
 import { SearchIcon } from 'lucide-react'
 
-export function UsersFilterBar() {
+interface Props {
+  searchValue: string
+  onSearchChange: (value: string) => void
+}
+
+export function UsersFilterBar({ searchValue, onSearchChange }: Props) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -20,7 +25,6 @@ export function UsersFilterBar() {
 
   const roleValue = searchParams.get('role') ?? 'all'
   const statusValue = searchParams.get('status') ?? 'all'
-  const [searchValue, setSearchValue] = useState(searchParams.get('search') ?? '')
 
   const roleItems = [
     { value: 'all', label: 'All Roles' },
@@ -40,9 +44,9 @@ export function UsersFilterBar() {
 
   function pushParams(updates: Record<string, string | undefined>) {
     const params = new URLSearchParams()
-    const role = updates.role ?? (searchParams.get('role') || undefined)
-    const status = updates.status ?? (searchParams.get('status') || undefined)
-    const search = updates.search ?? (searchParams.get('search') || undefined)
+    const role = 'role' in updates ? updates.role : (searchParams.get('role') || undefined)
+    const status = 'status' in updates ? updates.status : (searchParams.get('status') || undefined)
+    const search = 'search' in updates ? updates.search : (searchParams.get('search') || undefined)
     if (role) params.set('role', role)
     if (status) params.set('status', status)
     if (search) params.set('search', search)
@@ -51,7 +55,7 @@ export function UsersFilterBar() {
 
   function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
     const value = e.target.value
-    setSearchValue(value)
+    onSearchChange(value)
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
       pushParams({ search: value || undefined })

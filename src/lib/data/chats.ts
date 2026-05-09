@@ -166,7 +166,12 @@ export async function getMessagesForChat(
     body: m.body,
     read_by: m.read_by,
     created_at: m.created_at,
-    sender: m.users as ChatParticipantUser,
+    sender: (m.users as ChatParticipantUser | null) ?? {
+      id: m.sender_id,
+      first_name: 'Deleted',
+      last_name: 'User',
+      avatar_url: null,
+    },
   }))
 }
 
@@ -205,6 +210,31 @@ export async function markMessagesRead(
 ): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (supabase.rpc as any)('mark_messages_read', { p_chat_id: chatId, p_user_id: userId })
+}
+
+export async function getTotalUnreadCount(
+  supabase: Client,
+  userId: string
+): Promise<number> {
+  const { data: participations } = await supabase
+    .from('chat_participants')
+    .select('chat_id')
+    .eq('user_id', userId)
+
+  if (!participations || participations.length === 0) return 0
+
+  const chatIds = participations.map((p) => p.chat_id)
+
+  const { data: messages } = await supabase
+    .from('messages')
+    .select('sender_id, read_by')
+    .in('chat_id', chatIds)
+
+  if (!messages) return 0
+
+  return messages.filter(
+    (m) => m.sender_id !== userId && !(m.read_by as string[]).includes(userId)
+  ).length
 }
 
 export async function createChat(
