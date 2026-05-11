@@ -1,5 +1,5 @@
-import { Skeleton } from '@/components/ui/skeleton'
-import { MetricsGridSkeleton } from '@/components/shared/metrics-grid'
+import { MetricsGridSkeleton } from "@/components/shared";
+import { Skeleton } from "@/components/ui";
 
 export default function DashboardLoading() {
   return (
@@ -9,5 +9,5 @@ export default function DashboardLoading() {
       </div>
       <MetricsGridSkeleton count={3} />
     </>
-  )
+  );
 }

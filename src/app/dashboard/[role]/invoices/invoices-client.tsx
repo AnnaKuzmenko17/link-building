@@ -1,61 +1,71 @@
-'use client'
+"use client";
 
-import { useState, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
-import { SlidersHorizontalIcon } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
+
+import { SlidersHorizontalIcon } from "lucide-react";
+
+import type { InvoiceListRow } from "@/lib/data/invoices";
+import { DataTable } from "@/components/shared";
 import {
+  Button,
+  DatePicker,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { DatePicker } from '@/components/ui/date-picker'
-import { DataTable } from '@/components/shared/data-table'
-import { buildInvoiceColumns } from './invoices-columns'
-import type { InvoiceListRow } from '@/lib/data/invoices'
-import type { InvoiceStatus } from '@/types'
+} from "@/components/ui";
+
+import { STATUS_OPTIONS } from "./constants";
+import { buildInvoiceColumns } from "./invoices-columns";
 
 interface Props {
-  invoices: InvoiceListRow[]
-  clients: { id: string; first_name: string; last_name: string }[]
-  role: string
+  invoices: InvoiceListRow[];
+  clients: { id: string; first_name: string; last_name: string }[];
+  role: string;
 }
 
-const STATUS_OPTIONS: { value: InvoiceStatus; label: string }[] = [
-  { value: 'draft', label: 'Draft' },
-  { value: 'sent', label: 'Sent' },
-  { value: 'paid', label: 'Paid' },
-]
-
 export function InvoicesClient({ invoices, clients, role }: Props) {
-  const router = useRouter()
-  const [filtersOpen, setFiltersOpen] = useState(false)
-  const [filterStatus, setFilterStatus] = useState('')
-  const [filterClient, setFilterClient] = useState('')
-  const [filterPeriodStart, setFilterPeriodStart] = useState('')
-  const [filterPeriodEnd, setFilterPeriodEnd] = useState('')
+  const router = useRouter();
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterClient, setFilterClient] = useState("");
+  const [filterPeriodStart, setFilterPeriodStart] = useState("");
+  const [filterPeriodEnd, setFilterPeriodEnd] = useState("");
 
-  const columns = useMemo(() => buildInvoiceColumns(role), [role])
+  const columns = useMemo(() => buildInvoiceColumns(role), [role]);
 
   const filtered = useMemo(() => {
     return invoices.filter((inv) => {
-      if (filterStatus && inv.status !== filterStatus) return false
-      if (filterClient && inv.client_id !== filterClient) return false
-      if (filterPeriodStart && inv.billing_period_start < filterPeriodStart) return false
-      if (filterPeriodEnd && inv.billing_period_end > filterPeriodEnd) return false
-      return true
-    })
-  }, [invoices, filterStatus, filterClient, filterPeriodStart, filterPeriodEnd])
+      if (filterStatus && inv.status !== filterStatus) return false;
+      if (filterClient && inv.client_id !== filterClient) return false;
+      if (filterPeriodStart && inv.billing_period_start < filterPeriodStart)
+        return false;
+      if (filterPeriodEnd && inv.billing_period_end > filterPeriodEnd)
+        return false;
+      return true;
+    });
+  }, [
+    invoices,
+    filterStatus,
+    filterClient,
+    filterPeriodStart,
+    filterPeriodEnd,
+  ]);
 
-  const activeCount = [filterStatus, filterClient, filterPeriodStart, filterPeriodEnd].filter(Boolean).length
+  const activeCount = [
+    filterStatus,
+    filterClient,
+    filterPeriodStart,
+    filterPeriodEnd,
+  ].filter(Boolean).length;
 
   function clearFilters() {
-    setFilterStatus('')
-    setFilterClient('')
-    setFilterPeriodStart('')
-    setFilterPeriodEnd('')
+    setFilterStatus("");
+    setFilterClient("");
+    setFilterPeriodStart("");
+    setFilterPeriodEnd("");
   }
 
   return (
@@ -71,7 +81,7 @@ export function InvoicesClient({ invoices, clients, role }: Props) {
           <SlidersHorizontalIcon className="size-4" />
           Filters
           {activeCount > 0 && (
-            <span className="ml-1 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+            <span className="bg-primary text-primary-foreground ml-1 flex size-4 items-center justify-center rounded-full text-[10px] font-medium">
               {activeCount}
             </span>
           )}
@@ -86,34 +96,46 @@ export function InvoicesClient({ invoices, clients, role }: Props) {
       {filtersOpen && (
         <div id="invoices-filters" className="rounded-lg border p-4">
           <div className="flex flex-wrap gap-3">
-            <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v ?? '')}>
+            <Select
+              value={filterStatus}
+              onValueChange={(v) => setFilterStatus(v ?? "")}
+            >
               <SelectTrigger className="w-44">
                 <SelectValue placeholder="All Statuses">
-                  {filterStatus ? (STATUS_OPTIONS.find((s) => s.value === filterStatus)?.label ?? filterStatus) : 'All Statuses'}
+                  {filterStatus
+                    ? (STATUS_OPTIONS.find((s) => s.value === filterStatus)
+                        ?.label ?? filterStatus)
+                    : "All Statuses"}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">All Statuses</SelectItem>
                 {STATUS_OPTIONS.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  <SelectItem key={s.value} value={s.value}>
+                    {s.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            {role !== 'client' && (
-              <Select value={filterClient} onValueChange={(v) => setFilterClient(v ?? '')}>
+            {role !== "client" && (
+              <Select
+                value={filterClient}
+                onValueChange={(v) => setFilterClient(v ?? "")}
+              >
                 <SelectTrigger className="w-44">
                   <SelectValue placeholder="All Clients">
                     {filterClient
-                      ? (`${clients.find((c) => c.id === filterClient)?.first_name ?? ''} ${clients.find((c) => c.id === filterClient)?.last_name ?? ''}`).trim() || '—'
-                      : 'All Clients'}
+                      ? `${clients.find((c) => c.id === filterClient)?.first_name ?? ""} ${clients.find((c) => c.id === filterClient)?.last_name ?? ""}`.trim() ||
+                        "—"
+                      : "All Clients"}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">All Clients</SelectItem>
                   {clients.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
-                      {(`${c.first_name} ${c.last_name}`).trim() || '—'}
+                      {`${c.first_name} ${c.last_name}`.trim() || "—"}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -123,8 +145,9 @@ export function InvoicesClient({ invoices, clients, role }: Props) {
             <DatePicker
               value={filterPeriodStart}
               onChange={(v) => {
-                setFilterPeriodStart(v)
-                if (filterPeriodEnd && v > filterPeriodEnd) setFilterPeriodEnd('')
+                setFilterPeriodStart(v);
+                if (filterPeriodEnd && v > filterPeriodEnd)
+                  setFilterPeriodEnd("");
               }}
               maxDate={filterPeriodEnd || undefined}
               placeholder="From DD.MM.YYYY"
@@ -132,8 +155,9 @@ export function InvoicesClient({ invoices, clients, role }: Props) {
             <DatePicker
               value={filterPeriodEnd}
               onChange={(v) => {
-                setFilterPeriodEnd(v)
-                if (filterPeriodStart && v < filterPeriodStart) setFilterPeriodStart('')
+                setFilterPeriodEnd(v);
+                if (filterPeriodStart && v < filterPeriodStart)
+                  setFilterPeriodStart("");
               }}
               minDate={filterPeriodStart || undefined}
               placeholder="To DD.MM.YYYY"
@@ -145,8 +169,10 @@ export function InvoicesClient({ invoices, clients, role }: Props) {
       <DataTable
         columns={columns}
         data={filtered}
-        onRowClick={(row) => router.push(`/dashboard/${role}/invoices/${row.id}`)}
+        onRowClick={(row) =>
+          router.push(`/dashboard/${role}/invoices/${row.id}`)
+        }
       />
     </div>
-  )
+  );
 }

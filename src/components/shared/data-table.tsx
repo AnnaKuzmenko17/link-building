@@ -1,6 +1,7 @@
-'use client'
+"use client";
 
-import { useRef, useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from "react";
+
 import {
   flexRender,
   getCoreRowModel,
@@ -8,53 +9,60 @@ import {
   useReactTable,
   type ColumnDef,
   type PaginationState,
-} from '@tanstack/react-table'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+} from "@tanstack/react-table";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
+import { EmptyState } from "@/components/shared";
 import {
+  Button,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Skeleton,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Skeleton } from '@/components/ui/skeleton'
-import { EmptyState } from '@/components/shared/empty-state'
+} from "@/components/ui";
 
-const PAGE_SIZE_OPTIONS = [10, 25, 50]
-const DEFAULT_PAGE_SIZE = 10
+const PAGE_SIZE_OPTIONS = [10, 25, 50];
+const DEFAULT_PAGE_SIZE = 10;
 
 interface Props<T> {
-  columns: ColumnDef<T>[]
-  data: T[]
-  isLoading?: boolean
-  onRowClick?: (row: T) => void
+  columns: ColumnDef<T>[];
+  data: T[];
+  isLoading?: boolean;
+  onRowClick?: (row: T) => void;
 }
 
-export function DataTable<T>({ columns, data, isLoading, onRowClick }: Props<T>) {
-  const tableRef = useRef<HTMLDivElement>(null)
-  const pointerDownOutside = useRef(false)
+export function DataTable<T>({
+  columns,
+  data,
+  isLoading,
+  onRowClick,
+}: Props<T>) {
+  const tableRef = useRef<HTMLDivElement>(null);
+  const pointerDownOutside = useRef(false);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: DEFAULT_PAGE_SIZE,
-  })
+  });
 
   useEffect(() => {
-    if (!onRowClick) return
+    if (!onRowClick) return;
     function onPointerDown(e: PointerEvent) {
-      pointerDownOutside.current = !tableRef.current?.contains(e.target as Node)
+      pointerDownOutside.current = !tableRef.current?.contains(
+        e.target as Node
+      );
     }
-    document.addEventListener('pointerdown', onPointerDown, true)
-    return () => document.removeEventListener('pointerdown', onPointerDown, true)
-  }, [onRowClick])
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () =>
+      document.removeEventListener("pointerdown", onPointerDown, true);
+  }, [onRowClick]);
 
   const table = useReactTable({
     data,
@@ -63,24 +71,31 @@ export function DataTable<T>({ columns, data, isLoading, onRowClick }: Props<T>)
     getPaginationRowModel: getPaginationRowModel(),
     state: { pagination },
     onPaginationChange: setPagination,
-  })
+  });
 
-  const pageCount = table.getPageCount()
-  const { pageIndex, pageSize } = pagination
-  const totalRows = data.length
-  const firstRow = totalRows === 0 ? 0 : pageIndex * pageSize + 1
-  const lastRow = Math.min((pageIndex + 1) * pageSize, totalRows)
+  const pageCount = table.getPageCount();
+  const { pageIndex, pageSize } = pagination;
+  const totalRows = data.length;
+  const firstRow = totalRows === 0 ? 0 : pageIndex * pageSize + 1;
+  const lastRow = Math.min((pageIndex + 1) * pageSize, totalRows);
 
-  function buildPageNumbers(): (number | '…')[] {
-    if (pageCount <= 7) return Array.from({ length: pageCount }, (_, i) => i)
-    const pages: (number | '…')[] = []
-    const addEllipsis = () => { if (pages[pages.length - 1] !== '…') pages.push('…') }
-    pages.push(0)
-    if (pageIndex > 2) addEllipsis()
-    for (let i = Math.max(1, pageIndex - 1); i <= Math.min(pageCount - 2, pageIndex + 1); i++) pages.push(i)
-    if (pageIndex < pageCount - 3) addEllipsis()
-    pages.push(pageCount - 1)
-    return pages
+  function buildPageNumbers(): (number | "…")[] {
+    if (pageCount <= 7) return Array.from({ length: pageCount }, (_, i) => i);
+    const pages: (number | "…")[] = [];
+    const addEllipsis = () => {
+      if (pages[pages.length - 1] !== "…") pages.push("…");
+    };
+    pages.push(0);
+    if (pageIndex > 2) addEllipsis();
+    for (
+      let i = Math.max(1, pageIndex - 1);
+      i <= Math.min(pageCount - 2, pageIndex + 1);
+      i++
+    )
+      pages.push(i);
+    if (pageIndex < pageCount - 3) addEllipsis();
+    pages.push(pageCount - 1);
+    return pages;
   }
 
   return (
@@ -92,7 +107,12 @@ export function DataTable<T>({ columns, data, isLoading, onRowClick }: Props<T>)
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <TableHead key={header.id}>
-                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                   </TableHead>
                 ))}
               </TableRow>
@@ -118,14 +138,14 @@ export function DataTable<T>({ columns, data, isLoading, onRowClick }: Props<T>)
             ) : (
               table.getRowModel().rows.map((row) => {
                 function handleKeyDown(e: React.KeyboardEvent) {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault()
-                    onRowClick?.(row.original)
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onRowClick?.(row.original);
                   }
                 }
                 function handleClick() {
-                  if (pointerDownOutside.current) return
-                  onRowClick?.(row.original)
+                  if (pointerDownOutside.current) return;
+                  onRowClick?.(row.original);
                 }
                 return (
                   <TableRow
@@ -133,15 +153,22 @@ export function DataTable<T>({ columns, data, isLoading, onRowClick }: Props<T>)
                     onClick={onRowClick ? handleClick : undefined}
                     onKeyDown={onRowClick ? handleKeyDown : undefined}
                     tabIndex={onRowClick ? 0 : undefined}
-                    className={onRowClick ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring' : undefined}
+                    className={
+                      onRowClick
+                        ? "focus-visible:ring-ring cursor-pointer focus-visible:ring-2 focus-visible:outline-none"
+                        : undefined
+                    }
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
                       </TableCell>
                     ))}
                   </TableRow>
-                )
+                );
               })
             )}
           </TableBody>
@@ -150,27 +177,29 @@ export function DataTable<T>({ columns, data, isLoading, onRowClick }: Props<T>)
 
       {pageCount > 1 && (
         <div className="flex items-center justify-between gap-4 px-1">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="text-muted-foreground flex items-center gap-2 text-sm">
             <span>Rows per page</span>
             <Select
               value={String(pageSize)}
               onValueChange={(v) => {
-                table.setPageSize(Number(v))
-                table.setPageIndex(0)
+                table.setPageSize(Number(v));
+                table.setPageIndex(0);
               }}
             >
-              <SelectTrigger className="h-8 w-[70px]">
+              <SelectTrigger className="h-8 w-17.5">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {PAGE_SIZE_OPTIONS.map((size) => (
-                  <SelectItem key={size} value={String(size)}>{size}</SelectItem>
+                  <SelectItem key={size} value={String(size)}>
+                    {size}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          <span className="text-sm text-muted-foreground">
+          <span className="text-muted-foreground text-sm">
             {firstRow}–{lastRow} of {totalRows}
           </span>
 
@@ -186,12 +215,17 @@ export function DataTable<T>({ columns, data, isLoading, onRowClick }: Props<T>)
             </Button>
 
             {buildPageNumbers().map((p, i) =>
-              p === '…' ? (
-                <span key={`ellipsis-${i}`} className="px-1 text-sm text-muted-foreground">…</span>
+              p === "…" ? (
+                <span
+                  key={`ellipsis-${i}`}
+                  className="text-muted-foreground px-1 text-sm"
+                >
+                  …
+                </span>
               ) : (
                 <Button
                   key={p}
-                  variant={p === pageIndex ? 'default' : 'outline'}
+                  variant={p === pageIndex ? "default" : "outline"}
                   size="icon"
                   className="h-8 w-8"
                   onClick={() => table.setPageIndex(p as number)}
@@ -214,5 +248,5 @@ export function DataTable<T>({ columns, data, isLoading, onRowClick }: Props<T>)
         </div>
       )}
     </div>
-  )
+  );
 }

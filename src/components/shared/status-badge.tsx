@@ -1,40 +1,36 @@
-import { Badge } from '@/components/ui/badge'
-import type { OrderStatus, UserStatus, SiteStatus, InvoiceStatus } from '@/types'
+import type {
+  InvoiceStatus,
+  OrderStatus,
+  SiteStatus,
+  UserStatus,
+} from "@/types";
 
-type Status = OrderStatus | UserStatus | SiteStatus | InvoiceStatus
+import {
+  invoiceStatusConfig,
+  orderStatusConfig,
+  siteStatusConfig,
+  userStatusConfig,
+} from "@/lib/status-config";
+import { Badge } from "@/components/ui";
 
-interface StatusConfig {
-  label: string
-  variant: 'default' | 'secondary' | 'destructive' | 'outline'
-}
+type Status = OrderStatus | UserStatus | SiteStatus | InvoiceStatus;
 
-const statusConfig: Record<Status, StatusConfig> = {
-  // UserStatus
-  active: { label: 'Active', variant: 'default' },
-  pending: { label: 'Pending', variant: 'outline' },
-  disabled: { label: 'Disabled', variant: 'secondary' },
-  // SiteStatus
-  archived: { label: 'Archived', variant: 'secondary' },
-  // OrderStatus
-  new: { label: 'New', variant: 'outline' },
-  in_progress: { label: 'In Progress', variant: 'default' },
-  content_sent: { label: 'Content Sent', variant: 'secondary' },
-  needs_changes: { label: 'Needs Changes', variant: 'destructive' },
-  content_approved: { label: 'Content Approved', variant: 'default' },
-  published: { label: 'Published', variant: 'default' },
-  completed: { label: 'Completed', variant: 'secondary' },
-  canceled: { label: 'Canceled', variant: 'destructive' },
-  // InvoiceStatus
-  draft: { label: 'Draft', variant: 'outline' },
-  sent: { label: 'Sent', variant: 'outline' },
-  paid: { label: 'Paid', variant: 'default' },
-}
+const allStatusConfig = {
+  ...orderStatusConfig,
+  ...userStatusConfig,
+  ...siteStatusConfig,
+  ...invoiceStatusConfig,
+};
 
 interface Props {
-  status: Status
+  status: Status;
 }
 
 export function StatusBadge({ status }: Props) {
-  const config = statusConfig[status]
-  return <Badge variant={config.variant}>{config.label}</Badge>
+  const config = allStatusConfig[status];
+  return (
+    <Badge variant="outline" className={config.className}>
+      {config.label}
+    </Badge>
+  );
 }

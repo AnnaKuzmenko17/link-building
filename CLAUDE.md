@@ -31,11 +31,11 @@ This is a linkbuilding management platform with five roles: `client`, `manager`,
 
 ### Supabase client usage
 
-| Context | Import |
-|---|---|
-| Browser / Client Component | `src/lib/supabase/client.ts` → `createClient()` |
+| Context                                          | Import                                                |
+| ------------------------------------------------ | ----------------------------------------------------- |
+| Browser / Client Component                       | `src/lib/supabase/client.ts` → `createClient()`       |
 | Server Component / Server Action / Route Handler | `src/lib/supabase/server.ts` → `await createClient()` |
-| Proxy (`proxy.ts`) | `src/lib/supabase/middleware.ts` → `updateSession()` |
+| Proxy (`proxy.ts`)                               | `src/lib/supabase/middleware.ts` → `updateSession()`  |
 
 The secret key (`SUPABASE_SECRET_KEY`) is for admin operations only — never expose it to the browser.
 
@@ -71,4 +71,5 @@ BREVO_SENDER_NAME               # sender display name (optional, defaults to "Li
 BREVO_SMTP_USER                 # Brevo SMTP login — used by Supabase local auth (config.toml)
 BREVO_SMTP_PASS                 # Brevo SMTP password / API key for SMTP relay
 VERCEL_URL                      # set automatically on Vercel; used to build email redirect URLs. Falls back to http://localhost:3000.
+NEXT_PUBLIC_SHOW_DEMO_ACCOUNTS  # set to "true" in local/.env.local to show demo login buttons; omit in production.
 ```

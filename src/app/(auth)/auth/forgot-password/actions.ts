@@ -1,26 +1,32 @@
-'use server'
+"use server";
 
-import { z } from 'zod'
-import { createClient } from '@/lib/supabase/server'
-import { getAppUrl } from '@/lib/get-app-url'
+import { z } from "zod";
 
-const schema = z.object({ email: z.email() })
+import { getAppUrl } from "@/lib/get-app-url";
+import { createClient } from "@/lib/supabase/server";
 
-export async function forgotPasswordAction(email: string): Promise<{ success: true } | { success: false; error: string }> {
-  const parsed = schema.safeParse({ email })
+const schema = z.object({ email: z.email() });
+
+export async function forgotPasswordAction(
+  email: string
+): Promise<{ success: true } | { success: false; error: string }> {
+  const parsed = schema.safeParse({ email });
   if (!parsed.success) {
-    return { success: false, error: 'Invalid email address.' }
+    return { success: false, error: "Invalid email address." };
   }
 
-  const supabase = await createClient()
+  const supabase = await createClient();
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${getAppUrl()}/auth/reset-password`,
-  })
+  });
 
   if (error) {
-    return { success: false, error: 'Something went wrong. Please try again later.' }
+    return {
+      success: false,
+      error: "Something went wrong. Please try again later.",
+    };
   }
 
-  return { success: true }
+  return { success: true };
 }

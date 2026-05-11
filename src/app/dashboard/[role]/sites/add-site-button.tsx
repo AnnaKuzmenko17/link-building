@@ -1,8 +1,9 @@
-import Link from 'next/link'
-import { buttonVariants } from '@/components/ui/button'
+import Link from "next/link";
+
+import { buttonVariants } from "@/components/ui";
 
 interface Props {
-  role: string
+  role: string;
 }
 
 export function AddSiteButton({ role }: Props) {
@@ -10,5 +11,5 @@ export function AddSiteButton({ role }: Props) {
     <Link href={`/dashboard/${role}/sites/new`} className={buttonVariants()}>
       Add Site
     </Link>
-  )
+  );
 }

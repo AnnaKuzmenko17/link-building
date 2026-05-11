@@ -1,49 +1,62 @@
-'use client'
+"use client";
 
-import { useState, useMemo } from 'react'
-import { SlidersHorizontalIcon } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { DatePicker } from '@/components/ui/date-picker'
+import { useMemo, useState } from "react";
+
+import { SlidersHorizontalIcon } from "lucide-react";
+
+import type { EarningRow } from "@/lib/data/earnings";
+import { DataTable } from "@/components/shared";
 import {
+  Button,
+  DatePicker,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { DataTable } from '@/components/shared/data-table'
-import { buildEarningsColumns } from './earnings-columns'
-import type { EarningRow } from '@/lib/data/earnings'
+} from "@/components/ui";
+
+import { buildEarningsColumns } from "./earnings-columns";
 
 interface Props {
-  rows: EarningRow[]
-  sourcers: { id: string; first_name: string; last_name: string }[]
-  role: string
+  rows: EarningRow[];
+  sourcers: { id: string; first_name: string; last_name: string }[];
+  role: string;
 }
 
 export function EarningsClient({ rows, sourcers, role }: Props) {
-  const columns = useMemo(() => buildEarningsColumns(role), [role])
-  const [filtersOpen, setFiltersOpen] = useState(false)
-  const [filterSourcer, setFilterSourcer] = useState('')
-  const [filterPeriodStart, setFilterPeriodStart] = useState('')
-  const [filterPeriodEnd, setFilterPeriodEnd] = useState('')
+  const columns = useMemo(() => buildEarningsColumns(role), [role]);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filterSourcer, setFilterSourcer] = useState("");
+  const [filterPeriodStart, setFilterPeriodStart] = useState("");
+  const [filterPeriodEnd, setFilterPeriodEnd] = useState("");
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
-      if (filterSourcer && r.order?.site?.sourcer?.id !== filterSourcer) return false
-      if (filterPeriodStart && r.invoice?.billing_period_start < filterPeriodStart) return false
-      if (filterPeriodEnd && r.invoice?.billing_period_end > filterPeriodEnd) return false
-      return true
-    })
-  }, [rows, filterSourcer, filterPeriodStart, filterPeriodEnd])
+      if (filterSourcer && r.order?.site?.sourcer?.id !== filterSourcer)
+        return false;
+      if (
+        filterPeriodStart &&
+        r.invoice?.billing_period_start < filterPeriodStart
+      )
+        return false;
+      if (filterPeriodEnd && r.invoice?.billing_period_end > filterPeriodEnd)
+        return false;
+      return true;
+    });
+  }, [rows, filterSourcer, filterPeriodStart, filterPeriodEnd]);
 
-  const showSourcerFilter = role === 'manager' || role === 'admin'
-  const activeCount = [filterSourcer, filterPeriodStart, filterPeriodEnd].filter(Boolean).length
+  const showSourcerFilter = role === "manager" || role === "admin";
+  const activeCount = [
+    filterSourcer,
+    filterPeriodStart,
+    filterPeriodEnd,
+  ].filter(Boolean).length;
 
   function clearFilters() {
-    setFilterSourcer('')
-    setFilterPeriodStart('')
-    setFilterPeriodEnd('')
+    setFilterSourcer("");
+    setFilterPeriodStart("");
+    setFilterPeriodEnd("");
   }
 
   return (
@@ -59,7 +72,7 @@ export function EarningsClient({ rows, sourcers, role }: Props) {
           <SlidersHorizontalIcon className="size-4" />
           Filters
           {activeCount > 0 && (
-            <span className="ml-1 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+            <span className="bg-primary text-primary-foreground ml-1 flex size-4 items-center justify-center rounded-full text-[10px] font-medium">
               {activeCount}
             </span>
           )}
@@ -75,22 +88,29 @@ export function EarningsClient({ rows, sourcers, role }: Props) {
         <div id="earnings-filters" className="rounded-lg border p-4">
           <div className="flex flex-wrap gap-3">
             {showSourcerFilter && (
-              <Select value={filterSourcer} onValueChange={(v) => setFilterSourcer(v ?? '')}>
+              <Select
+                value={filterSourcer}
+                onValueChange={(v) => setFilterSourcer(v ?? "")}
+              >
                 <SelectTrigger className="w-44">
                   <SelectValue placeholder="All Sourcers">
                     {filterSourcer
                       ? (() => {
-                          const s = sourcers.find((x) => x.id === filterSourcer)
-                          return s ? (`${s.first_name} ${s.last_name}`).trim() || '—' : '—'
+                          const s = sourcers.find(
+                            (x) => x.id === filterSourcer
+                          );
+                          return s
+                            ? `${s.first_name} ${s.last_name}`.trim() || "—"
+                            : "—";
                         })()
-                      : 'All Sourcers'}
+                      : "All Sourcers"}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">All Sourcers</SelectItem>
                   {sourcers.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
-                      {(`${s.first_name} ${s.last_name}`).trim() || '—'}
+                      {`${s.first_name} ${s.last_name}`.trim() || "—"}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -100,8 +120,9 @@ export function EarningsClient({ rows, sourcers, role }: Props) {
             <DatePicker
               value={filterPeriodStart}
               onChange={(v) => {
-                setFilterPeriodStart(v)
-                if (filterPeriodEnd && v > filterPeriodEnd) setFilterPeriodEnd('')
+                setFilterPeriodStart(v);
+                if (filterPeriodEnd && v > filterPeriodEnd)
+                  setFilterPeriodEnd("");
               }}
               maxDate={filterPeriodEnd || undefined}
               placeholder="From DD.MM.YYYY"
@@ -109,8 +130,9 @@ export function EarningsClient({ rows, sourcers, role }: Props) {
             <DatePicker
               value={filterPeriodEnd}
               onChange={(v) => {
-                setFilterPeriodEnd(v)
-                if (filterPeriodStart && v < filterPeriodStart) setFilterPeriodStart('')
+                setFilterPeriodEnd(v);
+                if (filterPeriodStart && v < filterPeriodStart)
+                  setFilterPeriodStart("");
               }}
               minDate={filterPeriodStart || undefined}
               placeholder="To DD.MM.YYYY"
@@ -121,5 +143,5 @@ export function EarningsClient({ rows, sourcers, role }: Props) {
 
       <DataTable columns={columns} data={filtered} />
     </div>
-  )
+  );
 }

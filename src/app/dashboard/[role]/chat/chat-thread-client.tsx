@@ -1,139 +1,78 @@
-'use client'
+"use client";
 
-import { useState, useEffect, useRef, useTransition, useCallback } from 'react'
-import { toast } from 'sonner'
-import { SendHorizontalIcon, ArchiveIcon } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
-import { createClient } from '@/lib/supabase/client'
-import { sendMessageAction, markMessagesReadAction } from './actions'
-import type { ChatDetail, ChatParticipantUser, MessageWithSender } from '@/lib/data/chats'
-import { getInitials } from '@/lib/utils'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
+
+import { ArchiveIcon, SendHorizontalIcon } from "lucide-react";
+import { toast } from "sonner";
+
+import type { ChatDetail, MessageWithSender } from "@/lib/data/chats";
+import { Button, Textarea } from "@/components/ui";
+
+import { markMessagesReadAction, sendMessageAction } from "./actions";
+import { MessageBubble } from "./message-bubble";
+import { useChatMessages } from "./use-chat-messages";
+import { useChatRealtime } from "./use-chat-realtime";
+import { formatDateLabel } from "./utils";
 
 interface Props {
-  chat: ChatDetail
-  initialMessages: MessageWithSender[]
-  currentUserId: string
+  chat: ChatDetail;
+  initialMessages: MessageWithSender[];
+  currentUserId: string;
 }
 
-function formatTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-  })
-}
+export function ChatThreadClient({
+  chat,
+  initialMessages,
+  currentUserId,
+}: Props) {
+  const { messages, addMessage, updateMessage, removeMessage } =
+    useChatMessages(initialMessages);
+  const [body, setBody] = useState("");
+  const [isSending, startSending] = useTransition();
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-function formatDateLabel(dateStr: string): string {
-  const d = new Date(dateStr)
-  const today = new Date()
-  const yesterday = new Date(today)
-  yesterday.setDate(yesterday.getDate() - 1)
-
-  if (d.toDateString() === today.toDateString()) return 'Today'
-  if (d.toDateString() === yesterday.toDateString()) return 'Yesterday'
-  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-}
-
-export function ChatThreadClient({ chat, initialMessages, currentUserId }: Props) {
-  const [messages, setMessages] = useState<MessageWithSender[]>(initialMessages)
-  const [body, setBody] = useState('')
-  const [isSending, startSending] = useTransition()
-  const bottomRef = useRef<HTMLDivElement>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-
-  const isArchived = chat.status === 'archived'
+  const isArchived = chat.status === "archived";
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'instant' })
-  }, [])
+    bottomRef.current?.scrollIntoView({ behavior: "instant" });
+  }, []);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages.length])
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages.length]);
 
   useEffect(() => {
-    markMessagesReadAction(chat.id)
-  }, [chat.id])
+    markMessagesReadAction(chat.id);
+  }, [chat.id]);
 
-  useEffect(() => {
-    const supabase = createClient()
-    const channel = supabase
-      .channel(`chat-${chat.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `chat_id=eq.${chat.id}`,
-        },
-        (payload) => {
-          const newMsg = payload.new as {
-            id: string
-            chat_id: string
-            sender_id: string
-            body: string
-            read_by: string[]
-            created_at: string
-          }
-
-          if (newMsg.sender_id === currentUserId) return
-
-          const sender = chat.participants.find((p) => p.id === newMsg.sender_id) ?? {
-            id: newMsg.sender_id,
-            first_name: '',
-            last_name: 'Unknown',
-            avatar_url: null,
-          }
-
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: newMsg.id,
-              chat_id: newMsg.chat_id,
-              sender_id: newMsg.sender_id,
-              body: newMsg.body,
-              read_by: newMsg.read_by,
-              created_at: newMsg.created_at,
-              sender,
-            },
-          ])
-
-          markMessagesReadAction(chat.id)
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'messages',
-          filter: `chat_id=eq.${chat.id}`,
-        },
-        (payload) => {
-          const updated = payload.new as { id: string; read_by: string[] }
-          setMessages((prev) =>
-            prev.map((m) => (m.id === updated.id ? { ...m, read_by: updated.read_by } : m))
-          )
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [chat.id, chat.participants, currentUserId])
+  useChatRealtime({
+    chatId: chat.id,
+    currentUserId,
+    participants: chat.participants,
+    onMessageAdded: addMessage,
+    onMessageUpdated: updateMessage,
+  });
 
   const handleSend = useCallback(() => {
-    const trimmed = body.trim()
-    if (!trimmed || isArchived) return
+    const trimmed = body.trim();
+    if (!trimmed || isArchived) return;
 
-    const currentSender = chat.participants.find((p) => p.id === currentUserId) ?? {
+    const currentSender = chat.participants.find(
+      (p) => p.id === currentUserId
+    ) ?? {
       id: currentUserId,
-      first_name: '',
-      last_name: 'Me',
+      first_name: "",
+      last_name: "Me",
       avatar_url: null,
-    }
+    };
 
     const optimistic: MessageWithSender = {
       id: `optimistic-${Date.now()}`,
@@ -143,139 +82,81 @@ export function ChatThreadClient({ chat, initialMessages, currentUserId }: Props
       read_by: [],
       created_at: new Date().toISOString(),
       sender: currentSender,
-    }
+    };
 
-    setMessages((prev) => [...prev, optimistic])
-    setBody('')
+    addMessage(optimistic);
+    setBody("");
 
     startSending(async () => {
-      const result = await sendMessageAction(chat.id, trimmed)
+      const result = await sendMessageAction(chat.id, trimmed);
       if (!result.success) {
-        toast.error(result.error)
-        setMessages((prev) => prev.filter((m) => m.id !== optimistic.id))
-        setBody(trimmed)
+        toast.error(result.error);
+        removeMessage(optimistic.id);
+        setBody(trimmed);
       }
-    })
-  }, [body, chat.id, chat.participants, currentUserId, isArchived])
+    });
+  }, [
+    body,
+    chat.id,
+    chat.participants,
+    currentUserId,
+    isArchived,
+    addMessage,
+    removeMessage,
+  ]);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
   }
 
-  const lastMessage = messages[messages.length - 1]
-  const lastOwnMessageId =
-    lastMessage?.sender_id === currentUserId ? lastMessage.id : undefined
+  const lastOwnMessageId = useMemo(() => {
+    const last = messages[messages.length - 1];
+    return last?.sender_id === currentUserId ? last.id : undefined;
+  }, [messages, currentUserId]);
 
-  const messagesWithLabels = messages.map((msg, i) => {
-    const dateLabel = formatDateLabel(msg.created_at)
-    const prevLabel = i > 0 ? formatDateLabel(messages[i - 1].created_at) : ''
-    return { msg, dateLabel, showDateLabel: dateLabel !== prevLabel }
-  })
+  const messagesWithLabels = useMemo(
+    () =>
+      messages.map((msg, i) => {
+        const dateLabel = formatDateLabel(msg.created_at);
+        const prevLabel =
+          i > 0 ? formatDateLabel(messages[i - 1].created_at) : "";
+        return { msg, dateLabel, showDateLabel: dateLabel !== prevLabel };
+      }),
+    [messages]
+  );
 
   return (
-    <div className="flex flex-col h-[calc(100vh-220px)] rounded-lg border bg-background">
-      <div className="chat-messages flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-1">
+    <div className="bg-background flex h-[calc(100vh-220px)] flex-col rounded-lg border">
+      <div className="chat-messages flex flex-1 flex-col gap-1 overflow-y-auto px-4 py-4">
         {messages.length === 0 && (
-          <p className="text-center text-sm text-muted-foreground mt-8">
+          <p className="text-muted-foreground mt-8 text-center text-sm">
             No messages yet. Start the conversation.
           </p>
         )}
-        {messagesWithLabels.map(({ msg, dateLabel, showDateLabel }) => {
-          const isOwn = msg.sender_id === currentUserId
-
-          return (
-            <div key={msg.id}>
-              {showDateLabel && (
-                <div className="flex items-center gap-2 my-3">
-                  <div className="flex-1 border-t" />
-                  <span className="text-xs text-muted-foreground">{dateLabel}</span>
-                  <div className="flex-1 border-t" />
-                </div>
-              )}
-              <div className={`flex items-end gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
-                <div
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium"
-                  title={`${msg.sender.first_name} ${msg.sender.last_name}`.trim()}
-                >
-                  {msg.sender.avatar_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={msg.sender.avatar_url}
-                      alt=""
-                      className="h-7 w-7 rounded-full object-cover"
-                    />
-                  ) : (
-                    getInitials(msg.sender.first_name, msg.sender.last_name)
-                  )}
-                </div>
-                <div className={`flex flex-col gap-0.5 max-w-[70%] ${isOwn ? 'items-end' : 'items-start'}`}>
-                  <span className="text-xs text-muted-foreground px-1">
-                    {isOwn
-                      ? 'You'
-                      : `${msg.sender.first_name} ${msg.sender.last_name}`.trim() || 'Unknown'}
-                  </span>
-                  <div
-                    className={`rounded-2xl px-3 py-2 text-sm ${
-                      isOwn
-                        ? 'bg-primary text-primary-foreground rounded-br-sm'
-                        : 'bg-muted rounded-bl-sm'
-                    }`}
-                  >
-                    {msg.body}
-                  </div>
-                  <span className="text-[10px] text-muted-foreground px-1">
-                    {formatTime(msg.created_at)}
-                  </span>
-                  {isOwn && msg.id === lastOwnMessageId && (() => {
-                    const readers = msg.read_by
-                      .filter((id) => id !== msg.sender_id)
-                      .map((id) => chat.participants.find((p) => p.id === id))
-                      .filter(Boolean) as ChatParticipantUser[]
-                    if (readers.length === 0) return null
-                    return (
-                      <div className="flex items-center gap-0.5 px-1 flex-row-reverse">
-                        {readers.slice(0, 5).map((reader) => (
-                          <div
-                            key={reader.id}
-                            className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-[8px] font-medium ring-1 ring-background"
-                            title={`${reader.first_name} ${reader.last_name}`.trim() || 'Unknown'}
-                          >
-                            {reader.avatar_url ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={reader.avatar_url}
-                                alt=""
-                                className="h-4 w-4 rounded-full object-cover"
-                              />
-                            ) : (
-                              getInitials(reader.first_name, reader.last_name)
-                            )}
-                          </div>
-                        ))}
-                        {readers.length > 5 && (
-                          <span className="text-[8px] text-muted-foreground">+{readers.length - 5}</span>
-                        )}
-                      </div>
-                    )
-                  })()}
-                </div>
-              </div>
-            </div>
-          )
-        })}
+        {messagesWithLabels.map(({ msg, dateLabel, showDateLabel }) => (
+          <MessageBubble
+            key={msg.id}
+            msg={msg}
+            isOwn={msg.sender_id === currentUserId}
+            dateLabel={dateLabel}
+            showDateLabel={showDateLabel}
+            isLastOwn={msg.id === lastOwnMessageId}
+            participants={chat.participants}
+          />
+        ))}
         <div ref={bottomRef} />
       </div>
 
       {isArchived ? (
-        <div className="border-t px-4 py-3 flex items-center gap-2 text-sm text-muted-foreground bg-muted/30">
+        <div className="text-muted-foreground bg-muted/30 flex items-center gap-2 border-t px-4 py-3 text-sm">
           <ArchiveIcon className="size-4 shrink-0" />
           <span>This chat is archived. Unarchive it to send messages.</span>
         </div>
       ) : (
-        <div className="border-t p-3 flex gap-2 items-end">
+        <div className="flex items-end gap-2 border-t p-3">
           <Textarea
             ref={textareaRef}
             value={body}
@@ -284,7 +165,7 @@ export function ChatThreadClient({ chat, initialMessages, currentUserId }: Props
             placeholder="Type a message… (Enter to send, Shift+Enter for new line)"
             rows={1}
             maxLength={5000}
-            className="resize-none min-h-[40px] max-h-[120px] flex-1"
+            className="max-h-30 min-h-10 flex-1 resize-none"
           />
           <Button
             size="icon"
@@ -297,5 +178,5 @@ export function ChatThreadClient({ chat, initialMessages, currentUserId }: Props
         </div>
       )}
     </div>
-  )
+  );
 }

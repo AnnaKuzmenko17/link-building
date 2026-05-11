@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { DM_Sans } from "next/font/google";
-import { Toaster } from "@/components/ui/sonner";
+
+import { Toaster } from "@/components/ui";
+
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -19,11 +21,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${dmSans.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">
+    <html lang="en" className={`${dmSans.variable} h-full antialiased`}>
+      <body className="flex min-h-full flex-col">
         {children}
         <Toaster />
       </body>

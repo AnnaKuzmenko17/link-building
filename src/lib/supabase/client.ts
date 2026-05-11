@@ -1,7 +1,9 @@
-import { createBrowserClient } from '@supabase/ssr'
-import type { Database } from '@/types/database.types'
-import { supabaseUrl, supabasePublishableKey } from './env'
+import { createBrowserClient } from "@supabase/ssr";
+
+import type { Database } from "@/types/database.types";
+
+import { supabasePublishableKey, supabaseUrl } from "./env";
 
 export function createClient() {
-  return createBrowserClient<Database>(supabaseUrl, supabasePublishableKey)
+  return createBrowserClient<Database>(supabaseUrl, supabasePublishableKey);
 }

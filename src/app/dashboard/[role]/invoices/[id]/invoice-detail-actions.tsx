@@ -1,62 +1,69 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { toast } from 'sonner'
-import { Button, buttonVariants } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
-import { ConfirmDialog } from '@/components/shared/confirm-dialog'
-import { EditInvoiceSheet } from './edit-invoice-sheet'
-import { sendInvoiceAction, markAsPaidAction } from './actions'
-import type { InvoiceWithItems } from '@/lib/data/invoices'
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+
+import { toast } from "sonner";
+
+import type { InvoiceWithItems } from "@/lib/data/invoices";
+import { cn } from "@/lib/utils";
+import { ConfirmDialog } from "@/components/shared";
+import { Button, buttonVariants } from "@/components/ui";
+
+import { markAsPaidAction, sendInvoiceAction } from "./actions";
+import { EditInvoiceSheet } from "./edit-invoice-sheet";
 
 interface Props {
-  invoice: InvoiceWithItems
-  role: string
+  invoice: InvoiceWithItems;
+  role: string;
 }
 
 export function InvoiceDetailActions({ invoice, role }: Props) {
-  const router = useRouter()
-  const [editOpen, setEditOpen] = useState(false)
-  const [sendOpen, setSendOpen] = useState(false)
-  const [paidOpen, setPaidOpen] = useState(false)
-  const [isSending, setIsSending] = useState(false)
-  const [isMarkingPaid, setIsMarkingPaid] = useState(false)
+  const router = useRouter();
+  const [editOpen, setEditOpen] = useState(false);
+  const [sendOpen, setSendOpen] = useState(false);
+  const [paidOpen, setPaidOpen] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [isMarkingPaid, setIsMarkingPaid] = useState(false);
 
-  const canManage = role === 'manager' || role === 'admin'
+  const canManage = role === "manager" || role === "admin";
 
   async function handleSend() {
-    setIsSending(true)
-    const result = await sendInvoiceAction(invoice.id)
-    setIsSending(false)
+    setIsSending(true);
+    const result = await sendInvoiceAction(invoice.id);
+    setIsSending(false);
     if (!result.success) {
-      toast.error(result.error)
-      return
+      toast.error(result.error);
+      return;
     }
-    toast.success('Invoice sent')
-    setSendOpen(false)
-    router.refresh()
+    toast.success("Invoice sent");
+    setSendOpen(false);
+    router.refresh();
   }
 
   async function handleMarkPaid() {
-    setIsMarkingPaid(true)
-    const result = await markAsPaidAction(invoice.id)
-    setIsMarkingPaid(false)
+    setIsMarkingPaid(true);
+    const result = await markAsPaidAction(invoice.id);
+    setIsMarkingPaid(false);
     if (!result.success) {
-      toast.error(result.error)
-      return
+      toast.error(result.error);
+      return;
     }
-    toast.success('Invoice marked as paid')
-    setPaidOpen(false)
-    router.refresh()
+    toast.success("Invoice marked as paid");
+    setPaidOpen(false);
+    router.refresh();
   }
 
   return (
     <>
-      <div className="flex items-center gap-2 flex-shrink-0">
-        {canManage && invoice.status === 'draft' && (
+      <div className="flex flex-shrink-0 items-center gap-2">
+        {canManage && invoice.status === "draft" && (
           <>
-            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setEditOpen(true)}
+            >
               Edit
             </Button>
             <Button size="sm" onClick={() => setSendOpen(true)}>
@@ -65,17 +72,17 @@ export function InvoiceDetailActions({ invoice, role }: Props) {
           </>
         )}
 
-        {canManage && invoice.status === 'sent' && (
+        {canManage && invoice.status === "sent" && (
           <Button size="sm" onClick={() => setPaidOpen(true)}>
             Mark as Paid
           </Button>
         )}
 
-        {(invoice.status === 'sent' || invoice.status === 'paid') && (
+        {(invoice.status === "sent" || invoice.status === "paid") && (
           <a
             href={`/api/invoices/${invoice.id}/pdf`}
             download
-            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
           >
             Download PDF
           </a>
@@ -109,5 +116,5 @@ export function InvoiceDetailActions({ invoice, role }: Props) {
         isLoading={isMarkingPaid}
       />
     </>
-  )
+  );
 }

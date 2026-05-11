@@ -1,44 +1,55 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
-import { SlidersHorizontalIcon } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { UsersFilterBar } from './users-filter-bar'
-import { UsersTable } from './users-columns'
-import type { UserWithManager } from '@/lib/data/users'
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
+
+import { SlidersHorizontalIcon } from "lucide-react";
+
+import type { UserWithManager } from "@/lib/data/users";
+import { Button } from "@/components/ui";
+
+import { UsersTable } from "./users-columns";
+import { UsersFilterBar } from "./users-filter-bar";
 
 interface Props {
-  users: UserWithManager[]
-  basePath: string
-  defaultFilters: { role?: string; status?: string; search?: string }
+  users: UserWithManager[];
+  basePath: string;
+  defaultFilters: { role?: string; status?: string; search?: string };
 }
 
 function ClearFiltersButton({ onClear }: { onClear: () => void }) {
-  const router = useRouter()
-  const pathname = usePathname()
+  const router = useRouter();
+  const pathname = usePathname();
 
   function handleClearFilters() {
-    onClear()
-    router.replace(pathname, { scroll: false })
+    onClear();
+    router.replace(pathname, { scroll: false });
   }
 
   return (
     <Button variant="ghost" size="sm" onClick={handleClearFilters}>
       Clear filters
     </Button>
-  )
+  );
 }
 
 export function UsersClient({ users, basePath, defaultFilters }: Props) {
-  const [filtersOpen, setFiltersOpen] = useState(false)
-  const [searchValue, setSearchValue] = useState(defaultFilters.search ?? '')
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState(defaultFilters.search ?? "");
 
-  const hasActiveFilters = !!(defaultFilters.role || defaultFilters.status || defaultFilters.search)
-  const activeCount = [defaultFilters.role, defaultFilters.status, defaultFilters.search].filter(Boolean).length
+  const hasActiveFilters = !!(
+    defaultFilters.role ||
+    defaultFilters.status ||
+    defaultFilters.search
+  );
+  const activeCount = [
+    defaultFilters.role,
+    defaultFilters.status,
+    defaultFilters.search,
+  ].filter(Boolean).length;
 
   function handleToggleFilters() {
-    setFiltersOpen((v) => !v)
+    setFiltersOpen((v) => !v);
   }
 
   return (
@@ -54,21 +65,26 @@ export function UsersClient({ users, basePath, defaultFilters }: Props) {
           <SlidersHorizontalIcon className="size-4" />
           Filters
           {hasActiveFilters && (
-            <span className="ml-1 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+            <span className="bg-primary text-primary-foreground ml-1 flex size-4 items-center justify-center rounded-full text-[10px] font-medium">
               {activeCount}
             </span>
           )}
         </Button>
-        {hasActiveFilters && <ClearFiltersButton onClear={() => setSearchValue('')} />}
+        {hasActiveFilters && (
+          <ClearFiltersButton onClear={() => setSearchValue("")} />
+        )}
       </div>
 
       {filtersOpen && (
         <div id="users-filters" className="rounded-lg border p-4">
-          <UsersFilterBar searchValue={searchValue} onSearchChange={setSearchValue} />
+          <UsersFilterBar
+            searchValue={searchValue}
+            onSearchChange={setSearchValue}
+          />
         </div>
       )}
 
       <UsersTable data={users} basePath={basePath} />
     </div>
-  )
+  );
 }
