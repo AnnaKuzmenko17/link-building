@@ -1,116 +1,121 @@
-'use client'
+"use client";
 
-import { useRef } from 'react'
-import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import { Input } from '@/components/ui/input'
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRef } from "react";
+
+import { SearchIcon } from "lucide-react";
+
 import {
+  Input,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { SearchIcon } from 'lucide-react'
+} from "@/components/ui";
+
+import { ROLE_OPTIONS, STATUS_OPTIONS } from "./constants";
 
 interface Props {
-  searchValue: string
-  onSearchChange: (value: string) => void
+  searchValue: string;
+  onSearchChange: (value: string) => void;
 }
 
 export function UsersFilterBar({ searchValue, onSearchChange }: Props) {
-  const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const roleValue = searchParams.get('role') ?? 'all'
-  const statusValue = searchParams.get('status') ?? 'all'
-
-  const roleItems = [
-    { value: 'all', label: 'All Roles' },
-    { value: 'client', label: 'Client' },
-    { value: 'manager', label: 'Manager' },
-    { value: 'copywriter', label: 'Copywriter' },
-    { value: 'sourcer', label: 'Sourcer' },
-    { value: 'admin', label: 'Admin' },
-  ]
-
-  const statusItems = [
-    { value: 'all', label: 'All Statuses' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'active', label: 'Active' },
-    { value: 'disabled', label: 'Disabled' },
-  ]
+  const roleValue = searchParams.get("role") ?? "all";
+  const statusValue = searchParams.get("status") ?? "all";
 
   function pushParams(updates: Record<string, string | undefined>) {
-    const params = new URLSearchParams()
-    const role = 'role' in updates ? updates.role : (searchParams.get('role') || undefined)
-    const status = 'status' in updates ? updates.status : (searchParams.get('status') || undefined)
-    const search = 'search' in updates ? updates.search : (searchParams.get('search') || undefined)
-    if (role) params.set('role', role)
-    if (status) params.set('status', status)
-    if (search) params.set('search', search)
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    const params = new URLSearchParams();
+    const role =
+      "role" in updates ? updates.role : searchParams.get("role") || undefined;
+    const status =
+      "status" in updates
+        ? updates.status
+        : searchParams.get("status") || undefined;
+    const search =
+      "search" in updates
+        ? updates.search
+        : searchParams.get("search") || undefined;
+    if (role) params.set("role", role);
+    if (status) params.set("status", status);
+    if (search) params.set("search", search);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
   function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const value = e.target.value
-    onSearchChange(value)
-    if (debounceRef.current) clearTimeout(debounceRef.current)
+    const value = e.target.value;
+    onSearchChange(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      pushParams({ search: value || undefined })
-    }, 300)
+      pushParams({ search: value || undefined });
+    }, 300);
   }
 
   function handleRoleChange(value: string | null) {
-    const next = value ?? 'all'
-    pushParams({ role: next === 'all' ? undefined : next })
+    const next = value ?? "all";
+    pushParams({ role: next === "all" ? undefined : next });
   }
 
   function handleStatusChange(value: string | null) {
-    const next = value ?? 'all'
-    pushParams({ status: next === 'all' ? undefined : next })
+    const next = value ?? "all";
+    pushParams({ status: next === "all" ? undefined : next });
   }
 
   return (
     <div className="flex flex-wrap gap-2">
       <div className="relative">
-        <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
+        <SearchIcon className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
         <Input
-          className="pl-8 w-64"
+          className="w-64 pl-8"
           placeholder="Search by name or email…"
           value={searchValue}
           onChange={handleSearchChange}
         />
       </div>
-      <Select value={roleValue} onValueChange={handleRoleChange} items={roleItems}>
+      <Select
+        value={roleValue}
+        onValueChange={handleRoleChange}
+        items={ROLE_OPTIONS}
+      >
         <SelectTrigger className="w-40">
           <SelectValue placeholder="All Roles">
-            {roleItems.find((r) => r.value === roleValue)?.label ?? 'All Roles'}
+            {ROLE_OPTIONS.find((r) => r.value === roleValue)?.label ??
+              "All Roles"}
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Roles</SelectItem>
-          <SelectItem value="client">Client</SelectItem>
-          <SelectItem value="manager">Manager</SelectItem>
-          <SelectItem value="copywriter">Copywriter</SelectItem>
-          <SelectItem value="sourcer">Sourcer</SelectItem>
-          <SelectItem value="admin">Admin</SelectItem>
+          {ROLE_OPTIONS.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
-      <Select value={statusValue} onValueChange={handleStatusChange} items={statusItems}>
+      <Select
+        value={statusValue}
+        onValueChange={handleStatusChange}
+        items={STATUS_OPTIONS}
+      >
         <SelectTrigger className="w-40">
           <SelectValue placeholder="All Statuses">
-            {statusItems.find((s) => s.value === statusValue)?.label ?? 'All Statuses'}
+            {STATUS_OPTIONS.find((s) => s.value === statusValue)?.label ??
+              "All Statuses"}
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Statuses</SelectItem>
-          <SelectItem value="pending">Pending</SelectItem>
-          <SelectItem value="active">Active</SelectItem>
-          <SelectItem value="disabled">Disabled</SelectItem>
+          {STATUS_OPTIONS.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
     </div>
-  )
+  );
 }

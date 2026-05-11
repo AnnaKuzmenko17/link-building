@@ -1,5 +1,5 @@
-import { Skeleton } from '@/components/ui/skeleton'
-import { TableSkeleton } from '@/components/shared/table-skeleton'
+import { TableSkeleton } from "@/components/shared";
+import { Skeleton } from "@/components/ui";
 
 export default function UsersLoading() {
   return (
@@ -13,5 +13,5 @@ export default function UsersLoading() {
         <TableSkeleton columns={5} />
       </div>
     </div>
-  )
+  );
 }

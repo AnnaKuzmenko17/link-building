@@ -94,37 +94,45 @@ Run the following migrations in the Supabase SQL editor in order:
 Enable RLS on every table. Implement the following policies:
 
 **`users` table:**
+
 - `admin`: full read/write access.
 - `manager`: read all users; update `client`, `copywriter`, `sourcer` records only.
 - `sourcer`, `copywriter`, `client`: read own record only.
 
 **`sites` table:**
+
 - `admin`: full access.
 - `manager`: read all.
 - `sourcer`: read own sites where `status != 'archived'`; insert; update own sites where `status != 'archived'`.
 
 **`cart_items` table:**
+
 - `client`: full access to own rows (`client_id = auth.uid()`).
 
 **`orders` table:**
+
 - `admin`, `manager`: full access.
 - `client`: read/update own orders (`client_id = auth.uid()`).
 - `copywriter`: read/update own assigned orders (`copywriter_id = auth.uid()`).
 - `sourcer`: read orders where `sourcer_id = auth.uid()`.
 
 **`change_requests` table:**
+
 - `client`: insert where `order.client_id = auth.uid()`; read own.
 - `copywriter`: read for assigned orders.
 - `manager`, `admin`: full access.
 
 **`invoices` table:**
+
 - `admin`, `manager`: full access.
 - `client`: read own invoices where `status IN ('sent', 'paid')`.
 
 **`invoice_items` table:**
+
 - Follows same rules as `invoices` via join.
 
 **`chats` / `chat_participants` / `messages` tables:**
+
 - All authenticated users: read access to chats they participate in (use `chat_participants` as the gate).
 - `chats` update policy: only participants of chats with `category = 'general'` may update (covers Edit + Archive/Unarchive). Support/Sales chats are not updatable from the client.
 - `messages` insert policy: requires the user to be a participant of the chat **and** the chat's `status = 'active'`. Archived chats reject new messages at the database level.
@@ -160,7 +168,7 @@ Run `supabase gen types typescript` to generate database types. Save output to `
 - Fields: email.
 - On submit: call Supabase `resetPasswordForEmail`.
 - Always show a neutral success message regardless of whether the email exists.
-- If the email is not found in the `users` table, show: *"No account found with that email."*
+- If the email is not found in the `users` table, show: _"No account found with that email."_
 - Provide a link back to `/login`.
 
 ### Step 3.4 — Build Reset Password screen
@@ -184,17 +192,18 @@ Run `supabase gen types typescript` to generate database types. Save output to `
 
 **Sidebar nav items per role:**
 
-| Role | Nav Items |
-|---|---|
-| `client` | Orders, Cart, Invoices, Chat |
-| `manager` | Orders, Sites, Users, Invoices, Earnings, Chat |
-| `copywriter` | Orders, Chat |
-| `sourcer` | Sites, Earnings, Chat |
-| `admin` | Orders, Sites, Users, Invoices, Earnings, Chat |
+| Role         | Nav Items                                      |
+| ------------ | ---------------------------------------------- |
+| `client`     | Orders, Cart, Invoices, Chat                   |
+| `manager`    | Orders, Sites, Users, Invoices, Earnings, Chat |
+| `copywriter` | Orders, Chat                                   |
+| `sourcer`    | Sites, Earnings, Chat                          |
+| `admin`      | Orders, Sites, Users, Invoices, Earnings, Chat |
 
 ### Step 4.2 — Create role-based dashboard home pages
 
 Create a simple dashboard home page for each role at:
+
 - `app/dashboard/client/page.tsx`
 - `app/dashboard/manager/page.tsx`
 - `app/dashboard/copywriter/page.tsx`
@@ -372,7 +381,7 @@ Run migrations in the Supabase SQL editor:
 
 - Trigger: **Edit** button on site detail.
 - Full-page form (same layout as Create). Pre-filled with current values.
-- On save by sourcer: `status` resets to `pending`. Show notice: *"Saving will reset this site to Pending for re-approval."*
+- On save by sourcer: `status` resets to `pending`. Show notice: _"Saving will reset this site to Pending for re-approval."_
 - On save by admin: status is not reset.
 
 ### Step 7.5 — Change Status flow (admin only)

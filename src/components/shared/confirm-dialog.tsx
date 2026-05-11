@@ -1,26 +1,26 @@
-'use client'
+"use client";
 
 import {
   AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
   AlertDialogDescription,
   AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction,
-} from '@/components/ui/alert-dialog'
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui";
 
 interface Props {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  title: string
-  description: string
-  onConfirm: () => void
-  isLoading?: boolean
-  confirmLabel?: string
-  cancelLabel?: string
-  variant?: 'default' | 'destructive'
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  description: string;
+  onConfirm: () => void;
+  isLoading?: boolean;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  variant?: "default" | "destructive";
 }
 
 export function ConfirmDialog({
@@ -30,9 +30,9 @@ export function ConfirmDialog({
   description,
   onConfirm,
   isLoading,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
-  variant = 'default',
+  confirmLabel = "Confirm",
+  cancelLabel = "Cancel",
+  variant = "default",
 }: Props) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -42,16 +42,18 @@ export function ConfirmDialog({
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isLoading}>{cancelLabel}</AlertDialogCancel>
+          <AlertDialogCancel disabled={isLoading}>
+            {cancelLabel}
+          </AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             disabled={isLoading}
-            variant={variant === 'destructive' ? 'destructive' : 'default'}
+            variant={variant === "destructive" ? "destructive" : "default"}
           >
-            {isLoading ? 'Please wait…' : confirmLabel}
+            {isLoading ? "Please wait…" : confirmLabel}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  )
+  );
 }

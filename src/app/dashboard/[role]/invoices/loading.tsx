@@ -1,5 +1,5 @@
-import { Skeleton } from '@/components/ui/skeleton'
-import { TableSkeleton } from '@/components/shared/table-skeleton'
+import { TableSkeleton } from "@/components/shared";
+import { Skeleton } from "@/components/ui";
 
 export default function InvoicesLoading() {
   return (
@@ -12,5 +12,5 @@ export default function InvoicesLoading() {
         <TableSkeleton columns={4} />
       </div>
     </div>
-  )
+  );
 }

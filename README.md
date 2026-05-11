@@ -19,11 +19,11 @@ A web-based internal platform that unifies all linkbuilding operations — from 
 
 ## Environments
 
-| Environment | URL |
-|---|---|
-| Local | http://localhost:3000 |
-| Staging | https://staging-link-building-five.vercel.app/ |
-| Production | https://link-building-five.vercel.app/ |
+| Environment | URL                                            |
+| ----------- | ---------------------------------------------- |
+| Local       | http://localhost:3000                          |
+| Staging     | https://staging-link-building-five.vercel.app/ |
+| Production  | https://link-building-five.vercel.app/         |
 
 ## Getting Started
 

@@ -1,9 +1,16 @@
-import Link from 'next/link'
-import { cn } from '@/lib/utils'
+import Link from "next/link";
 
-export function Logo({ className, href }: { className?: string; href?: string }) {
+import { cn } from "@/lib/utils";
+
+export function Logo({
+  className,
+  href,
+}: {
+  className?: string;
+  href?: string;
+}) {
   const content = (
-    <div className={cn('flex items-center gap-2', className)}>
+    <div className={cn("flex items-center gap-2", className)}>
       <svg
         width="28"
         height="28"
@@ -15,18 +22,44 @@ export function Logo({ className, href }: { className?: string; href?: string })
       >
         <rect width="28" height="28" rx="7" className="fill-primary" />
         {/* left ring */}
-        <rect x="5" y="11" width="8" height="6" rx="3" stroke="currentColor" strokeWidth="2" fill="none" />
+        <rect
+          x="5"
+          y="11"
+          width="8"
+          height="6"
+          rx="3"
+          stroke="currentColor"
+          strokeWidth="2"
+          fill="none"
+        />
         {/* right ring */}
-        <rect x="15" y="11" width="8" height="6" rx="3" stroke="currentColor" strokeWidth="2" fill="none" />
+        <rect
+          x="15"
+          y="11"
+          width="8"
+          height="6"
+          rx="3"
+          stroke="currentColor"
+          strokeWidth="2"
+          fill="none"
+        />
         {/* overlap connector */}
-        <line x1="13" y1="14" x2="15" y2="14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <line
+          x1="13"
+          y1="14"
+          x2="15"
+          y2="14"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
       </svg>
       <span className="text-lg font-semibold tracking-tight">Linkly</span>
     </div>
-  )
+  );
 
   if (href) {
-    return <Link href={href}>{content}</Link>
+    return <Link href={href}>{content}</Link>;
   }
-  return content
+  return content;
 }

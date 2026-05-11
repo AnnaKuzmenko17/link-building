@@ -1,218 +1,245 @@
-import type { SupabaseClient, PostgrestError } from '@supabase/supabase-js'
-import type { Database } from '@/types/database.types'
-import type { Order, Site, User, OrderStatus, ChangeRequest } from '@/types'
+import type { ChangeRequest, Order, OrderStatus, Site, User } from "@/types";
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 
-type Client = SupabaseClient<Database>
+import type { Database } from "@/types/database.types";
+
+type Client = SupabaseClient<Database>;
 
 export type OrderWithSite = Order & {
-  site: Pick<Site, 'id' | 'domain'>
-}
+  site: Pick<Site, "id" | "domain">;
+};
 
 export type OrderWithDetails = Order & {
-  site: Pick<Site, 'id' | 'domain'>
-  client: Pick<User, 'id' | 'first_name' | 'last_name'> | null
-  copywriter: Pick<User, 'id' | 'first_name' | 'last_name'> | null
-}
+  site: Pick<Site, "id" | "domain">;
+  client: Pick<User, "id" | "first_name" | "last_name"> | null;
+  copywriter: Pick<User, "id" | "first_name" | "last_name"> | null;
+};
 
 export type OrderWithFullDetails = OrderWithDetails & {
-  site: Pick<Site, 'id' | 'domain' | 'dr' | 'category_id' | 'requirements' | 'description' | 'link_type' | 'languages' | 'countries' | 'top_countries' | 'keywords_relevance' | 'organic_keywords_count' | 'organic_traffic_count'> & {
-    category: { id: string; name: string } | null
-  }
-  change_requests: ChangeRequest[]
-}
+  site: Pick<
+    Site,
+    | "id"
+    | "domain"
+    | "dr"
+    | "category_id"
+    | "requirements"
+    | "description"
+    | "link_type"
+    | "languages"
+    | "countries"
+    | "top_countries"
+    | "keywords_relevance"
+    | "organic_keywords_count"
+    | "organic_traffic_count"
+  > & {
+    category: { id: string; name: string } | null;
+  };
+  change_requests: ChangeRequest[];
+};
 
 export async function getClientOrders(
   supabase: Client,
-  clientId: string,
+  clientId: string
 ): Promise<OrderWithSite[]> {
   const { data } = await supabase
-    .from('orders')
-    .select('*, site:sites(id, domain)')
-    .eq('client_id', clientId)
-    .order('created_at', { ascending: false })
-  return (data ?? []) as OrderWithSite[]
+    .from("orders")
+    .select("*, site:sites(id, domain)")
+    .eq("client_id", clientId)
+    .order("created_at", { ascending: false });
+  return (data ?? []) as OrderWithSite[];
 }
 
 export async function getClientOrderById(
   supabase: Client,
   orderId: string,
-  clientId: string,
+  clientId: string
 ): Promise<OrderWithSite | null> {
   const { data } = await supabase
-    .from('orders')
-    .select('*, site:sites(id, domain)')
-    .eq('id', orderId)
-    .eq('client_id', clientId)
-    .maybeSingle()
-  return data as OrderWithSite | null
+    .from("orders")
+    .select("*, site:sites(id, domain)")
+    .eq("id", orderId)
+    .eq("client_id", clientId)
+    .maybeSingle();
+  return data as OrderWithSite | null;
 }
 
 export async function createOrders(
   supabase: Client,
-  rows: Array<{ client_id: string; site_id: string; publish_month: string; status: 'new'; comment?: string | null }>,
+  rows: Array<{
+    client_id: string;
+    site_id: string;
+    publish_month: string;
+    status: "new";
+    comment?: string | null;
+  }>
 ): Promise<{ error: PostgrestError | null }> {
-  const { error } = await supabase.from('orders').insert(rows)
-  return { error: error ?? null }
+  const { error } = await supabase.from("orders").insert(rows);
+  return { error: error ?? null };
 }
 
 export async function updateOrderPublishMonth(
   supabase: Client,
   orderId: string,
-  publishMonth: string,
+  publishMonth: string
 ): Promise<{ error: PostgrestError | null }> {
   const { error } = await supabase
-    .from('orders')
+    .from("orders")
     .update({ publish_month: publishMonth })
-    .eq('id', orderId)
-  return { error: error ?? null }
+    .eq("id", orderId);
+  return { error: error ?? null };
 }
 
 export async function updateOrderComment(
   supabase: Client,
   orderId: string,
-  comment: string | null,
+  comment: string | null
 ): Promise<{ error: PostgrestError | null }> {
   const { error } = await supabase
-    .from('orders')
+    .from("orders")
     .update({ comment })
-    .eq('id', orderId)
-  return { error: error ?? null }
+    .eq("id", orderId);
+  return { error: error ?? null };
 }
 
 export async function updateOrderStatus(
   supabase: Client,
   orderId: string,
-  status: OrderStatus,
+  status: OrderStatus
 ): Promise<{ error: PostgrestError | null }> {
   const { error } = await supabase
-    .from('orders')
+    .from("orders")
     .update({ status })
-    .eq('id', orderId)
-  return { error: error ?? null }
+    .eq("id", orderId);
+  return { error: error ?? null };
 }
 
 export async function createChangeRequest(
   supabase: Client,
   orderId: string,
   comment: string,
-  createdBy: string,
+  createdBy: string
 ): Promise<{ error: PostgrestError | null }> {
   const { error: crError } = await supabase
-    .from('change_requests')
-    .insert({ order_id: orderId, comment, created_by: createdBy })
-  if (crError) return { error: crError }
+    .from("change_requests")
+    .insert({ order_id: orderId, comment, created_by: createdBy });
+  if (crError) return { error: crError };
 
   const { error: statusError } = await supabase
-    .from('orders')
-    .update({ status: 'needs_changes' })
-    .eq('id', orderId)
-  return { error: statusError ?? null }
+    .from("orders")
+    .update({ status: "needs_changes" })
+    .eq("id", orderId);
+  return { error: statusError ?? null };
 }
 
 export async function getAllOrders(
   supabase: Client,
   filters: {
-    status?: string
-    clientId?: string
-    copywriterId?: string
-    publishMonth?: string
-  } = {},
+    status?: string;
+    clientId?: string;
+    copywriterId?: string;
+    publishMonth?: string;
+  } = {}
 ): Promise<OrderWithDetails[]> {
   let query = supabase
-    .from('orders')
-    .select('*, site:sites(id, domain), client:users!client_id(id, first_name, last_name), copywriter:users!copywriter_id(id, first_name, last_name)')
-    .order('created_at', { ascending: false })
+    .from("orders")
+    .select(
+      "*, site:sites(id, domain), client:users!client_id(id, first_name, last_name), copywriter:users!copywriter_id(id, first_name, last_name)"
+    )
+    .order("created_at", { ascending: false });
 
-  if (filters.status) query = query.eq('status', filters.status as OrderStatus)
-  if (filters.clientId) query = query.eq('client_id', filters.clientId)
+  if (filters.status) query = query.eq("status", filters.status as OrderStatus);
+  if (filters.clientId) query = query.eq("client_id", filters.clientId);
   if (filters.copywriterId) {
-    if (filters.copywriterId === '__unassigned__') {
-      query = query.is('copywriter_id', null)
+    if (filters.copywriterId === "__unassigned__") {
+      query = query.is("copywriter_id", null);
     } else {
-      query = query.eq('copywriter_id', filters.copywriterId)
+      query = query.eq("copywriter_id", filters.copywriterId);
     }
   }
-  if (filters.publishMonth) query = query.eq('publish_month', filters.publishMonth)
+  if (filters.publishMonth)
+    query = query.eq("publish_month", filters.publishMonth);
 
-  const { data } = await query
-  return (data ?? []) as unknown as OrderWithDetails[]
+  const { data } = await query;
+  return (data ?? []) as unknown as OrderWithDetails[];
 }
 
 export async function getOrderById(
   supabase: Client,
-  orderId: string,
+  orderId: string
 ): Promise<OrderWithFullDetails | null> {
   const { data } = await supabase
-    .from('orders')
-    .select('*, site:sites(id, domain, dr, category_id, requirements, description, link_type, languages, countries, top_countries, keywords_relevance, organic_keywords_count, organic_traffic_count, category:categories!category_id(id, name)), client:users!client_id(id, first_name, last_name), copywriter:users!copywriter_id(id, first_name, last_name), change_requests(*)')
-    .eq('id', orderId)
-    .maybeSingle()
-  return data as unknown as OrderWithFullDetails | null
+    .from("orders")
+    .select(
+      "*, site:sites(id, domain, dr, category_id, requirements, description, link_type, languages, countries, top_countries, keywords_relevance, organic_keywords_count, organic_traffic_count, category:categories!category_id(id, name)), client:users!client_id(id, first_name, last_name), copywriter:users!copywriter_id(id, first_name, last_name), change_requests(*)"
+    )
+    .eq("id", orderId)
+    .maybeSingle();
+  return data as unknown as OrderWithFullDetails | null;
 }
 
 export async function assignCopywriter(
   supabase: Client,
   orderId: string,
-  copywriterId: string,
+  copywriterId: string
 ): Promise<{ error: PostgrestError | null }> {
   const { error } = await supabase
-    .from('orders')
-    .update({ copywriter_id: copywriterId, status: 'in_progress' })
-    .eq('id', orderId)
-  return { error: error ?? null }
+    .from("orders")
+    .update({ copywriter_id: copywriterId, status: "in_progress" })
+    .eq("id", orderId);
+  return { error: error ?? null };
 }
 
 export async function reassignCopywriter(
   supabase: Client,
   orderId: string,
-  copywriterId: string,
+  copywriterId: string
 ): Promise<{ error: PostgrestError | null }> {
   const { error } = await supabase
-    .from('orders')
+    .from("orders")
     .update({ copywriter_id: copywriterId })
-    .eq('id', orderId)
-  return { error: error ?? null }
+    .eq("id", orderId);
+  return { error: error ?? null };
 }
 
 export async function publishOrder(
   supabase: Client,
   orderId: string,
-  publishedUrl: string,
+  publishedUrl: string
 ): Promise<{ error: PostgrestError | null }> {
   const { error } = await supabase
-    .from('orders')
-    .update({ published_url: publishedUrl, status: 'published' })
-    .eq('id', orderId)
-  return { error: error ?? null }
+    .from("orders")
+    .update({ published_url: publishedUrl, status: "published" })
+    .eq("id", orderId);
+  return { error: error ?? null };
 }
 
 export type CopywriterOrder = Order & {
-  site: Pick<Site, 'id' | 'domain' | 'dr'>
-  change_requests: ChangeRequest[]
-}
+  site: Pick<Site, "id" | "domain" | "dr">;
+  change_requests: ChangeRequest[];
+};
 
 export async function getCopywriterOrders(
   supabase: Client,
-  copywriterId: string,
+  copywriterId: string
 ): Promise<CopywriterOrder[]> {
   const { data } = await supabase
-    .from('orders')
-    .select('*, site:sites(id, domain, dr), change_requests(*)')
-    .eq('copywriter_id', copywriterId)
-    .order('created_at', { ascending: false })
-  return (data ?? []) as unknown as CopywriterOrder[]
+    .from("orders")
+    .select("*, site:sites(id, domain, dr), change_requests(*)")
+    .eq("copywriter_id", copywriterId)
+    .order("created_at", { ascending: false });
+  return (data ?? []) as unknown as CopywriterOrder[];
 }
 
 export async function saveOrderContent(
   supabase: Client,
   orderId: string,
-  content: string,
+  content: string
 ): Promise<{ error: PostgrestError | null }> {
   const { error } = await supabase
-    .from('orders')
+    .from("orders")
     .update({ content })
-    .eq('id', orderId)
-  return { error: error ?? null }
+    .eq("id", orderId);
+  return { error: error ?? null };
 }
 
 export async function reassignOrder(
@@ -222,22 +249,22 @@ export async function reassignOrder(
   toCopywriterId: string
 ): Promise<{ error: PostgrestError | null }> {
   const { error } = await supabase
-    .from('orders')
+    .from("orders")
     .update({ copywriter_id: toCopywriterId })
-    .eq('id', orderId)
-    .eq('copywriter_id', fromCopywriterId)
+    .eq("id", orderId)
+    .eq("copywriter_id", fromCopywriterId);
 
-  return { error }
+  return { error };
 }
 
 export async function updateOrdersToCompleted(
   supabase: Client,
-  orderIds: string[],
+  orderIds: string[]
 ): Promise<{ error: PostgrestError | null }> {
-  if (orderIds.length === 0) return { error: null }
+  if (orderIds.length === 0) return { error: null };
   const { error } = await supabase
-    .from('orders')
-    .update({ status: 'completed' })
-    .in('id', orderIds)
-  return { error: error ?? null }
+    .from("orders")
+    .update({ status: "completed" })
+    .in("id", orderIds);
+  return { error: error ?? null };
 }

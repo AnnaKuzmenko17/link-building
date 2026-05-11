@@ -1,42 +1,35 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+import { z } from "zod";
+
+import { PasswordInput } from "@/components/shared";
 import {
+  Button,
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog'
-import { PasswordInput } from '@/components/shared/password-input'
-import { changePasswordAction } from './actions'
+  Label,
+} from "@/components/ui";
+
+import { changePasswordAction } from "./actions";
+import { changePasswordSchema } from "./types";
 
 interface Props {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-const schema = z
-  .object({
-    currentPassword: z.string().min(1, 'Current password is required'),
-    newPassword: z.string().min(8, 'Password must be at least 8 characters'),
-    confirmPassword: z.string(),
-  })
-  .refine((d) => d.newPassword === d.confirmPassword, {
-    message: 'Passwords do not match',
-    path: ['confirmPassword'],
-  })
-
-type FormValues = z.infer<typeof schema>
+type FormValues = z.infer<typeof changePasswordSchema>;
 
 export function ChangePasswordDialog({ open, onOpenChange }: Props) {
-  const [isPending, setIsPending] = useState(false)
+  const [isPending, setIsPending] = useState(false);
 
   const {
     register,
@@ -44,27 +37,31 @@ export function ChangePasswordDialog({ open, onOpenChange }: Props) {
     reset,
     formState: { errors },
   } = useForm<FormValues>({
-    resolver: zodResolver(schema),
-    defaultValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
-  })
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
 
   function handleOpenChange(next: boolean) {
-    if (!next) reset()
-    onOpenChange(next)
+    if (!next) reset();
+    onOpenChange(next);
   }
 
   async function onSubmit(values: FormValues) {
-    setIsPending(true)
-    const result = await changePasswordAction(values)
-    setIsPending(false)
+    setIsPending(true);
+    const result = await changePasswordAction(values);
+    setIsPending(false);
 
     if (!result.success) {
-      toast.error(result.error)
-      return
+      toast.error(result.error);
+      return;
     }
 
-    toast.success('Password updated.')
-    handleOpenChange(false)
+    toast.success("Password updated.");
+    handleOpenChange(false);
   }
 
   return (
@@ -74,18 +71,29 @@ export function ChangePasswordDialog({ open, onOpenChange }: Props) {
           <DialogTitle>Change Password</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 py-2">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="flex flex-col gap-4 py-2"
+        >
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="current_password">Current Password</Label>
             <PasswordInput
               id="current_password"
               autoComplete="current-password"
               aria-invalid={!!errors.currentPassword}
-              aria-describedby={errors.currentPassword ? 'current-password-error' : undefined}
-              {...register('currentPassword')}
+              aria-describedby={
+                errors.currentPassword ? "current-password-error" : undefined
+              }
+              {...register("currentPassword")}
             />
             {errors.currentPassword && (
-              <p id="current-password-error" role="alert" className="text-xs text-destructive">{errors.currentPassword.message}</p>
+              <p
+                id="current-password-error"
+                role="alert"
+                className="text-destructive text-xs"
+              >
+                {errors.currentPassword.message}
+              </p>
             )}
           </div>
 
@@ -95,11 +103,19 @@ export function ChangePasswordDialog({ open, onOpenChange }: Props) {
               id="new_password"
               autoComplete="new-password"
               aria-invalid={!!errors.newPassword}
-              aria-describedby={errors.newPassword ? 'new-password-error' : undefined}
-              {...register('newPassword')}
+              aria-describedby={
+                errors.newPassword ? "new-password-error" : undefined
+              }
+              {...register("newPassword")}
             />
             {errors.newPassword && (
-              <p id="new-password-error" role="alert" className="text-xs text-destructive">{errors.newPassword.message}</p>
+              <p
+                id="new-password-error"
+                role="alert"
+                className="text-destructive text-xs"
+              >
+                {errors.newPassword.message}
+              </p>
             )}
           </div>
 
@@ -109,24 +125,37 @@ export function ChangePasswordDialog({ open, onOpenChange }: Props) {
               id="confirm_password"
               autoComplete="new-password"
               aria-invalid={!!errors.confirmPassword}
-              aria-describedby={errors.confirmPassword ? 'confirm-password-error' : undefined}
-              {...register('confirmPassword')}
+              aria-describedby={
+                errors.confirmPassword ? "confirm-password-error" : undefined
+              }
+              {...register("confirmPassword")}
             />
             {errors.confirmPassword && (
-              <p id="confirm-password-error" role="alert" className="text-xs text-destructive">{errors.confirmPassword.message}</p>
+              <p
+                id="confirm-password-error"
+                role="alert"
+                className="text-destructive text-xs"
+              >
+                {errors.confirmPassword.message}
+              </p>
             )}
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" disabled={isPending} onClick={() => handleOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isPending}
+              onClick={() => handleOpenChange(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isPending}>
-              {isPending ? 'Saving…' : 'Change Password'}
+              {isPending ? "Saving…" : "Change Password"}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

@@ -1,18 +1,26 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { InviteUserSheet } from './invite-user-sheet'
-import type { Role } from '@/types'
+import { useState } from "react";
+
+import type { Role } from "@/types";
+
+import { Button } from "@/components/ui";
+
+import { InviteUserSheet } from "./invite-user-sheet";
+import { Manager } from "./types";
 
 interface Props {
-  viewerRole: Role
-  viewerName: string
-  activeManagers: { id: string; first_name: string; last_name: string }[]
+  viewerRole: Role;
+  viewerName: string;
+  activeManagers: Manager[];
 }
 
-export function InviteUserButton({ viewerRole, viewerName, activeManagers }: Props) {
-  const [open, setOpen] = useState(false)
+export function InviteUserButton({
+  viewerRole,
+  viewerName,
+  activeManagers,
+}: Props) {
+  const [open, setOpen] = useState(false);
 
   return (
     <>
@@ -25,5 +33,5 @@ export function InviteUserButton({ viewerRole, viewerName, activeManagers }: Pro
         activeManagers={activeManagers}
       />
     </>
-  )
+  );
 }

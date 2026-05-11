@@ -1,16 +1,16 @@
-import { Skeleton } from '@/components/ui/skeleton'
 import {
+  Skeleton,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from "@/components/ui";
 
 interface Props {
-  columns?: number
-  rows?: number
+  columns?: number;
+  rows?: number;
 }
 
 export function TableSkeleton({ columns = 5, rows = 5 }: Props) {
@@ -39,5 +39,5 @@ export function TableSkeleton({ columns = 5, rows = 5 }: Props) {
         </TableBody>
       </Table>
     </div>
-  )
+  );
 }

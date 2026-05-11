@@ -1,6 +1,12 @@
-import { Fragment } from 'react'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Fragment } from "react";
+
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Skeleton,
+} from "@/components/ui";
 
 export default function ProfileLoading() {
   return (
@@ -30,5 +36,5 @@ export default function ProfileLoading() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

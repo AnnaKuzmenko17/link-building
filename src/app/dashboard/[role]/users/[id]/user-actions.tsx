@@ -1,154 +1,181 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import { ConfirmDialog } from '@/components/shared/confirm-dialog'
-import { EditUserSheet } from './edit-user-sheet'
-import { ReassignOrdersSheet } from './reassign-orders-sheet'
-import { AssignManagerDialog } from './assign-manager-dialog'
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+
+import type { Role } from "@/types";
+import { toast } from "sonner";
+
+import type {
+  ActiveCopywriter,
+  ActiveOrderForReassign,
+  UserWithManager,
+} from "@/lib/data/users";
+import { ConfirmDialog } from "@/components/shared";
+import { Button } from "@/components/ui";
+
 import {
-  getDisablePreCheckAction,
-  disableUserAction,
-  disableSourcerAction,
   activateUserAction,
+  disableSourcerAction,
+  disableUserAction,
+  getDisablePreCheckAction,
   resendInviteAction,
-} from './actions'
-import type { Role } from '@/types'
-import type { UserWithManager, ActiveOrderForReassign, ActiveCopywriter } from '@/lib/data/users'
+} from "./actions";
+import { AssignManagerDialog } from "./assign-manager-dialog";
+import { EditUserSheet } from "./edit-user-sheet";
+import { ReassignOrdersSheet } from "./reassign-orders-sheet";
 
 interface Props {
-  targetUser: UserWithManager
-  viewerRole: Role
-  currentUserId: string
-  activeManagers: { id: string; first_name: string; last_name: string }[]
+  targetUser: UserWithManager;
+  viewerRole: Role;
+  currentUserId: string;
+  activeManagers: { id: string; first_name: string; last_name: string }[];
 }
 
 type ReassignData = {
-  orders: ActiveOrderForReassign[]
-  copywriters: ActiveCopywriter[]
-}
+  orders: ActiveOrderForReassign[];
+  copywriters: ActiveCopywriter[];
+};
 
-export function UserActions({ targetUser, viewerRole, currentUserId, activeManagers }: Props) {
-  const router = useRouter()
+export function UserActions({
+  targetUser,
+  viewerRole,
+  currentUserId,
+  activeManagers,
+}: Props) {
+  const router = useRouter();
 
-  const [editOpen, setEditOpen] = useState(false)
-  const [resendOpen, setResendOpen] = useState(false)
-  const [simpleDisableOpen, setSimpleDisableOpen] = useState(false)
-  const [sourcerDisableOpen, setSourcerDisableOpen] = useState(false)
-  const [reassignOpen, setReassignOpen] = useState(false)
-  const [reassignData, setReassignData] = useState<ReassignData | null>(null)
-  const [activateOpen, setActivateOpen] = useState(false)
-  const [assignManagerOpen, setAssignManagerOpen] = useState(false)
-  const [pending, setPending] = useState<string | null>(null)
+  const [editOpen, setEditOpen] = useState(false);
+  const [resendOpen, setResendOpen] = useState(false);
+  const [simpleDisableOpen, setSimpleDisableOpen] = useState(false);
+  const [sourcerDisableOpen, setSourcerDisableOpen] = useState(false);
+  const [reassignOpen, setReassignOpen] = useState(false);
+  const [reassignData, setReassignData] = useState<ReassignData | null>(null);
+  const [activateOpen, setActivateOpen] = useState(false);
+  const [assignManagerOpen, setAssignManagerOpen] = useState(false);
+  const [pending, setPending] = useState<string | null>(null);
 
-  const isAdmin = viewerRole === 'admin'
-  const isManager = viewerRole === 'manager'
-  const isSelf = targetUser.id === currentUserId
-  const isPending = targetUser.status === 'pending'
-  const isDisabled = targetUser.status === 'disabled'
-  const isActive = targetUser.status === 'active'
+  const isAdmin = viewerRole === "admin";
+  const isManager = viewerRole === "manager";
+  const isSelf = targetUser.id === currentUserId;
+  const isPending = targetUser.status === "pending";
+  const isDisabled = targetUser.status === "disabled";
+  const isActive = targetUser.status === "active";
 
   const canEdit =
     isAdmin ||
-    (isManager && targetUser.role !== 'admin' && targetUser.role !== 'manager')
-  const canResend = isPending
-  const canDisable = isAdmin && !isSelf && isActive
-  const canActivate = isAdmin && !isSelf && isDisabled
-  const canAssignManager = isAdmin && targetUser.role === 'client'
+    (isManager && targetUser.role !== "admin" && targetUser.role !== "manager");
+  const canResend = isPending;
+  const canDisable = isAdmin && !isSelf && isActive;
+  const canActivate = isAdmin && !isSelf && isDisabled;
+  const canAssignManager = isAdmin && targetUser.role === "client";
 
   async function handleResendConfirm() {
-    setPending('resend')
-    const result = await resendInviteAction(targetUser.id)
-    setPending(null)
+    setPending("resend");
+    const result = await resendInviteAction(targetUser.id);
+    setPending(null);
     if (!result.success) {
-      toast.error(result.error)
-      return
+      toast.error(result.error);
+      return;
     }
-    toast.success('Invite resent.')
-    setResendOpen(false)
+    toast.success("Invite resent.");
+    setResendOpen(false);
   }
 
   async function handleDisableClick() {
-    setPending('disable')
-    const check = await getDisablePreCheckAction(targetUser.id)
-    setPending(null)
+    setPending("disable");
+    const check = await getDisablePreCheckAction(targetUser.id);
+    setPending(null);
 
-    if ('success' in check && !check.success) {
-      toast.error(check.error)
-      return
+    if ("success" in check && !check.success) {
+      toast.error(check.error);
+      return;
     }
 
-    if ('type' in check) {
-      if (check.type === 'sourcer') {
-        setSourcerDisableOpen(true)
-      } else if (check.type === 'copywriter_reassign') {
-        setReassignData({ orders: check.orders, copywriters: check.copywriters })
-        setReassignOpen(true)
+    if ("type" in check) {
+      if (check.type === "sourcer") {
+        setSourcerDisableOpen(true);
+      } else if (check.type === "copywriter_reassign") {
+        setReassignData({
+          orders: check.orders,
+          copywriters: check.copywriters,
+        });
+        setReassignOpen(true);
       } else {
-        setSimpleDisableOpen(true)
+        setSimpleDisableOpen(true);
       }
     }
   }
 
   async function handleSimpleDisableConfirm() {
-    setPending('simpleDisable')
-    const result = await disableUserAction(targetUser.id)
-    setPending(null)
+    setPending("simpleDisable");
+    const result = await disableUserAction(targetUser.id);
+    setPending(null);
     if (!result.success) {
-      toast.error(result.error)
-      return
+      toast.error(result.error);
+      return;
     }
-    toast.success('User disabled.')
-    setSimpleDisableOpen(false)
-    router.refresh()
+    toast.success("User disabled.");
+    setSimpleDisableOpen(false);
+    router.refresh();
   }
 
   async function handleSourcerDisableConfirm() {
-    setPending('sourcerDisable')
-    const result = await disableSourcerAction(targetUser.id)
-    setPending(null)
+    setPending("sourcerDisable");
+    const result = await disableSourcerAction(targetUser.id);
+    setPending(null);
     if (!result.success) {
-      toast.error(result.error)
-      return
+      toast.error(result.error);
+      return;
     }
-    toast.success('User disabled.')
-    setSourcerDisableOpen(false)
-    router.refresh()
+    toast.success("User disabled.");
+    setSourcerDisableOpen(false);
+    router.refresh();
   }
 
   async function handleActivateConfirm() {
-    setPending('activate')
-    const result = await activateUserAction(targetUser.id)
-    setPending(null)
+    setPending("activate");
+    const result = await activateUserAction(targetUser.id);
+    setPending(null);
     if (!result.success) {
-      toast.error(result.error)
-      return
+      toast.error(result.error);
+      return;
     }
-    toast.success('User activated.')
-    setActivateOpen(false)
-    router.refresh()
+    toast.success("User activated.");
+    setActivateOpen(false);
+    router.refresh();
   }
 
   return (
     <div className="contents">
       {canEdit && (
-        <Button variant="outline" onClick={() => setEditOpen(true)}>Edit</Button>
+        <Button variant="outline" onClick={() => setEditOpen(true)}>
+          Edit
+        </Button>
       )}
       {canResend && (
-        <Button variant="outline" onClick={() => setResendOpen(true)}>Resend Invite</Button>
+        <Button variant="outline" onClick={() => setResendOpen(true)}>
+          Resend Invite
+        </Button>
       )}
       {canDisable && (
-        <Button variant="destructive" disabled={pending === 'disable'} onClick={handleDisableClick}>
-          {pending === 'disable' ? 'Checking…' : 'Disable'}
+        <Button
+          variant="destructive"
+          disabled={pending === "disable"}
+          onClick={handleDisableClick}
+        >
+          {pending === "disable" ? "Checking…" : "Disable"}
         </Button>
       )}
       {canActivate && (
-        <Button variant="outline" onClick={() => setActivateOpen(true)}>Activate</Button>
+        <Button variant="outline" onClick={() => setActivateOpen(true)}>
+          Activate
+        </Button>
       )}
       {canAssignManager && (
-        <Button variant="outline" onClick={() => setAssignManagerOpen(true)}>Assign Manager</Button>
+        <Button variant="outline" onClick={() => setAssignManagerOpen(true)}>
+          Assign Manager
+        </Button>
       )}
 
       <EditUserSheet
@@ -165,7 +192,7 @@ export function UserActions({ targetUser, viewerRole, currentUserId, activeManag
         description={`Resend the invitation email to ${targetUser.email}?`}
         confirmLabel="Resend"
         onConfirm={handleResendConfirm}
-        isLoading={pending === 'resend'}
+        isLoading={pending === "resend"}
       />
 
       <ConfirmDialog
@@ -176,7 +203,7 @@ export function UserActions({ targetUser, viewerRole, currentUserId, activeManag
         confirmLabel="Disable"
         variant="destructive"
         onConfirm={handleSimpleDisableConfirm}
-        isLoading={pending === 'simpleDisable'}
+        isLoading={pending === "simpleDisable"}
       />
 
       <ConfirmDialog
@@ -187,7 +214,7 @@ export function UserActions({ targetUser, viewerRole, currentUserId, activeManag
         confirmLabel="Disable"
         variant="destructive"
         onConfirm={handleSourcerDisableConfirm}
-        isLoading={pending === 'sourcerDisable'}
+        isLoading={pending === "sourcerDisable"}
       />
 
       {reassignData && (
@@ -207,7 +234,7 @@ export function UserActions({ targetUser, viewerRole, currentUserId, activeManag
         description={`Activate ${targetUser.first_name} ${targetUser.last_name}'s account?`}
         confirmLabel="Activate"
         onConfirm={handleActivateConfirm}
-        isLoading={pending === 'activate'}
+        isLoading={pending === "activate"}
       />
 
       <AssignManagerDialog
@@ -218,5 +245,5 @@ export function UserActions({ targetUser, viewerRole, currentUserId, activeManag
         managers={activeManagers}
       />
     </div>
-  )
+  );
 }
