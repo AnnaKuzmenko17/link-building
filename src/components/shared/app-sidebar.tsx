@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import type { Role } from "@/types";
 import type { User } from "@supabase/supabase-js";
@@ -16,6 +17,8 @@ import {
   WalletIcon,
   type LucideIcon,
 } from "lucide-react";
+
+import { createClient } from "@/lib/supabase/client";
 
 import { Logo, LogoutButton } from "@/components/shared";
 import {
@@ -140,6 +143,38 @@ export function AppSidebar({ role, user, unreadChatCount }: Props) {
   const avatarUrl =
     typeof meta.avatar_url === "string" ? meta.avatar_url : undefined;
 
+  const [liveCount, setLiveCount] = useState(unreadChatCount ?? 0);
+  const [prevServerCount, setPrevServerCount] = useState(unreadChatCount ?? 0);
+
+  // Sync state when the server prop changes (e.g. after messages are marked read).
+  // This is the React-recommended pattern for deriving state from props.
+  const serverCount = unreadChatCount ?? 0;
+  if (serverCount !== prevServerCount) {
+    setPrevServerCount(serverCount);
+    setLiveCount(serverCount);
+  }
+
+  useEffect(() => {
+    const userId = user.id;
+    const supabase = createClient();
+    const channel = supabase
+      .channel("global-unread")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
+        (payload) => {
+          const msg = payload.new as { sender_id: string; read_by: string[] };
+          if (msg.sender_id !== userId && !msg.read_by.includes(userId)) {
+            setLiveCount((c) => c + 1);
+          }
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user.id]);
+
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
@@ -152,8 +187,7 @@ export function AppSidebar({ role, user, unreadChatCount }: Props) {
             <SidebarMenu>
               {items.map((item) => {
                 const isChat = item.icon === MessageCircleIcon;
-                const showBadge =
-                  isChat && !!unreadChatCount && unreadChatCount > 0;
+                const showBadge = isChat && liveCount > 0;
                 return (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
@@ -164,7 +198,7 @@ export function AppSidebar({ role, user, unreadChatCount }: Props) {
                       <span>{item.label}</span>
                       {showBadge && (
                         <span className="bg-primary text-primary-foreground ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-medium">
-                          {unreadChatCount > 99 ? "99+" : unreadChatCount}
+                          {liveCount > 99 ? "99+" : liveCount}
                         </span>
                       )}
                     </SidebarMenuButton>

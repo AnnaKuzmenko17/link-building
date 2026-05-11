@@ -3,6 +3,7 @@ import React from "react";
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 
 import type { InvoiceWithItems } from "@/lib/data/invoices";
+import { formatDateLong } from "@/lib/format-date";
 
 const styles = StyleSheet.create({
   page: {
@@ -69,13 +70,6 @@ const styles = StyleSheet.create({
   },
 });
 
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-}
 
 interface Props {
   invoice: InvoiceWithItems;
@@ -92,8 +86,8 @@ export function InvoicePDFDocument({ invoice }: Props) {
       <Page size="A4" style={styles.page}>
         <Text style={styles.title}>Invoice</Text>
         <Text style={styles.subtitle}>
-          {formatDate(invoice.billing_period_start)} —{" "}
-          {formatDate(invoice.billing_period_end)}
+          {formatDateLong(invoice.billing_period_start)} —{" "}
+          {formatDateLong(invoice.billing_period_end)}
         </Text>
 
         <View style={styles.section}>

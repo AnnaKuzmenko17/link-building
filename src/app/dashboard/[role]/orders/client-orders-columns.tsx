@@ -9,6 +9,7 @@ import { MoreHorizontalIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import type { OrderWithSite } from "@/lib/data/orders";
+import { formatDate } from "@/lib/format-date";
 import { formatPublishMonth } from "@/lib/publish-months";
 import { ConfirmDialog, StatusBadge } from "@/components/shared";
 import {
@@ -171,11 +172,7 @@ export function buildOrderColumns(role: string): ColumnDef<OrderWithSite>[] {
       id: "created_at",
       header: "Created",
       cell: ({ row }) =>
-        new Date(row.original.created_at).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        }),
+        formatDate(row.original.created_at),
     },
     {
       id: "actions",

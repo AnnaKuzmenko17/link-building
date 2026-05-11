@@ -5,6 +5,7 @@ import type { Role } from "@/types";
 import { requireSession } from "@/lib/auth/get-session";
 import { getActiveManagers, getUserById } from "@/lib/data/users";
 import { createClient } from "@/lib/supabase/server";
+import { formatDate } from "@/lib/format-date";
 import { PageHeader, StatusBadge } from "@/components/shared";
 import {
   Avatar,
@@ -18,14 +19,6 @@ import { UserActions } from "./user-actions";
 
 interface Props {
   params: Promise<{ role: string; id: string }>;
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
 }
 
 export default async function UserDetailsPage({ params }: Props) {

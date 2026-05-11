@@ -1,6 +1,7 @@
 import { ChevronDownIcon } from "lucide-react";
 
 import type { OrderWithFullDetails } from "@/lib/data/orders";
+import { formatDate, formatDateLong } from "@/lib/format-date";
 import { formatPublishMonth } from "@/lib/publish-months";
 import { StatusBadge } from "@/components/shared";
 import { Card, CardContent } from "@/components/ui";
@@ -27,13 +28,6 @@ function Row({
 }
 
 export function OrderDetail({ order }: Props) {
-  const formatDate = (iso: string) =>
-    new Date(iso).toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
-
   const site = order.site;
 
   return (
@@ -48,14 +42,14 @@ export function OrderDetail({ order }: Props) {
             <StatusBadge status={order.status} />
           </Row>
           {order.status === "content_approved" && (
-            <Row label="Approved At">{formatDate(order.updated_at)}</Row>
+            <Row label="Approved At">{formatDateLong(order.updated_at)}</Row>
           )}
           {order.client && (
             <Row label="Client">
               {order.client.first_name} {order.client.last_name}
             </Row>
           )}
-          <Row label="Created At">{formatDate(order.created_at)}</Row>
+          <Row label="Created At">{formatDateLong(order.created_at)}</Row>
         </CardContent>
       </Card>
 
@@ -130,11 +124,7 @@ export function OrderDetail({ order }: Props) {
                     className="bg-muted/20 rounded-md border p-3 text-sm"
                   >
                     <p className="text-muted-foreground mb-1 text-xs">
-                      {new Date(cr.created_at).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
+                      {formatDate(cr.created_at)}
                     </p>
                     <p className="whitespace-pre-wrap">{cr.comment}</p>
                   </div>

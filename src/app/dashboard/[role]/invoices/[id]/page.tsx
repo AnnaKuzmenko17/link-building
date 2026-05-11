@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireSession } from "@/lib/auth/get-session";
 import { getInvoiceById } from "@/lib/data/invoices";
 import { createClient } from "@/lib/supabase/server";
+import { formatDateLong } from "@/lib/format-date";
 import { BackButton, PageHeader, StatusBadge } from "@/components/shared";
 import {
   Card,
@@ -21,14 +22,6 @@ import { InvoiceDetailActions } from "./invoice-detail-actions";
 
 interface Props {
   params: Promise<{ role: string; id: string }>;
-}
-
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
 }
 
 export default async function InvoiceDetailPage({ params }: Props) {
@@ -52,7 +45,7 @@ export default async function InvoiceDetailPage({ params }: Props) {
         <div className="flex items-center gap-3">
           <BackButton fallbackHref={`/dashboard/${role}/invoices`} />
           <PageHeader
-            title={`Invoice — ${formatDate(invoice.billing_period_start)} – ${formatDate(invoice.billing_period_end)}`}
+            title={`Invoice — ${formatDateLong(invoice.billing_period_start)} – ${formatDateLong(invoice.billing_period_end)}`}
           />
         </div>
         <InvoiceDetailActions invoice={invoice} role={role} />
@@ -90,8 +83,8 @@ export default async function InvoiceDetailPage({ params }: Props) {
             </CardTitle>
           </CardHeader>
           <CardContent className="text-sm">
-            {formatDate(invoice.billing_period_start)} —{" "}
-            {formatDate(invoice.billing_period_end)}
+            {formatDateLong(invoice.billing_period_start)} —{" "}
+            {formatDateLong(invoice.billing_period_end)}
           </CardContent>
         </Card>
 

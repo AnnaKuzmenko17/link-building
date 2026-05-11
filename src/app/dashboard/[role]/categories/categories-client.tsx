@@ -9,6 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { formatDate } from "@/lib/format-date";
 import { EmptyState } from "@/components/shared";
 import {
   Button,
@@ -108,7 +109,7 @@ export function CategoriesClient({ categories }: Props) {
                 <TableRow key={category.id}>
                   <TableCell className="font-medium">{category.name}</TableCell>
                   <TableCell className="text-muted-foreground text-sm">
-                    {new Date(category.created_at).toLocaleDateString()}
+                    {formatDate(category.created_at)}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button

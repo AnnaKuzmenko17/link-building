@@ -6,6 +6,7 @@ import type { Role } from "@/types";
 import { requireSession } from "@/lib/auth/get-session";
 import { getSiteById } from "@/lib/data/sites";
 import { createClient } from "@/lib/supabase/server";
+import { formatDateTime } from "@/lib/format-date";
 import { PageHeader, StatusBadge } from "@/components/shared";
 import { Card, CardContent } from "@/components/ui";
 
@@ -103,7 +104,7 @@ export default async function SiteDetailPage({ params }: Props) {
                   label="Needs Changes At"
                   value={
                     site.needs_changes_at
-                      ? new Date(site.needs_changes_at).toLocaleString()
+                      ? formatDateTime(site.needs_changes_at)
                       : "—"
                   }
                 />
@@ -124,7 +125,7 @@ export default async function SiteDetailPage({ params }: Props) {
                   label="Approved At"
                   value={
                     site.approved_at
-                      ? new Date(site.approved_at).toLocaleString()
+                      ? formatDateTime(site.approved_at)
                       : "—"
                   }
                 />

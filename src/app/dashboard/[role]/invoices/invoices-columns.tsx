@@ -3,15 +3,8 @@
 import type { ColumnDef } from "@tanstack/react-table";
 
 import type { InvoiceListRow } from "@/lib/data/invoices";
+import { formatDate } from "@/lib/format-date";
 import { StatusBadge } from "@/components/shared";
-
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
 
 export function buildInvoiceColumns(role: string): ColumnDef<InvoiceListRow>[] {
   const cols: ColumnDef<InvoiceListRow>[] = [];
